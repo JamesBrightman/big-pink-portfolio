@@ -1,0 +1,27 @@
+[
+  {
+    "fileName": "test1.png",
+    "description": "Test asset for digital / photo / travel (test1)",
+    "date": "2026-05-31"
+  },
+  {
+    "fileName": "test2.png",
+    "description": "Test asset for digital / photo / travel (test2)",
+    "date": "2026-06-01"
+  },
+  {
+    "fileName": "test3.png",
+    "description": "Test asset for digital / photo / travel (test3)",
+    "date": "2026-06-02"
+  },
+  {
+    "fileName": "test4.png",
+    "description": "Test asset for digital / photo / travel (test4)",
+    "date": "2026-06-03"
+  },
+  {
+    "fileName": "test5.png",
+    "description": "Test asset for digital / photo / travel (test5)",
+    "date": "2026-06-04"
+  }
+]
