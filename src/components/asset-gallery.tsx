@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
@@ -16,10 +17,8 @@ function collectFiles(folder: AssetFolder): AssetFile[] {
   );
 }
 
-function formatAssetDate(date: string) {
+function formatAssetYear(date: string) {
   return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${date}T00:00:00Z`));
@@ -283,6 +282,10 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
             <article
               key={`${asset.src}-${asset.name}`}
               className="group mb-4 break-inside-avoid overflow-hidden rounded-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+              style={{
+                contentVisibility: "auto",
+                containIntrinsicSize: "1px 400px",
+              }}
             >
               <div className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]">
                 {asset.kind === "image" ? (
@@ -290,6 +293,8 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
                     src={asset.src}
                     alt={asset.name}
                     loading="lazy"
+                    decoding="async"
+                    fetchPriority="low"
                     className="block h-auto w-full"
                   />
                 ) : (
@@ -302,10 +307,10 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
                 )}
 
                 <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
-                  <div className="max-w-[80%] text-center text-white">
-                    <p className="text-sm font-semibold tracking-tight">
-                      {formatAssetDate(asset.date)}
-                    </p>
+                    <div className="max-w-[80%] text-center text-white">
+                      <p className="text-sm font-semibold tracking-tight">
+                        {formatAssetYear(asset.date)}
+                      </p>
                     <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
                   </div>
                 </div>
