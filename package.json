@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "asset:add": "node scripts/add-asset.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "next": "16.2.3",

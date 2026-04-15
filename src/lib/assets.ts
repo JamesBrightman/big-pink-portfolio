@@ -6,13 +6,13 @@ export type AssetKind = "image" | "video";
 
 export const ASSET_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const assetMetadataItemSchema = z.object({
+export const assetMetadataItemSchema = z.object({
   fileName: z.string().min(1),
   description: z.string().min(1),
   date: z.string().regex(ASSET_DATE_PATTERN, "Use YYYY-MM-DD"),
 });
 
-const assetMetadataSchema = z.array(assetMetadataItemSchema);
+export const assetMetadataSchema = z.array(assetMetadataItemSchema);
 
 export type AssetMetadataItem = {
   fileName: string;
