@@ -24,6 +24,15 @@ function pickAspectRatio(src: string) {
   return ratios[hash % ratios.length];
 }
 
+function formatAssetDate(date: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
 function HomeIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-8 w-8">
@@ -307,7 +316,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
                     <div className="max-w-[80%] text-center text-white">
                       <p className="text-sm font-semibold tracking-tight">
-                        {new Date(asset.date).toLocaleDateString()}
+                        {formatAssetDate(asset.date)}
                       </p>
                       <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
                     </div>
