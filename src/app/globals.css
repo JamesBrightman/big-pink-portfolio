@@ -15,6 +15,8 @@
 html {
   min-height: 100%;
   background: #ffa4fa;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -23,11 +25,33 @@ body {
   color: var(--foreground);
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 500;
-  font-optical-sizing: auto;
+  font-optical-sizing: none;
+  font-kerning: normal;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 * {
   font-family: inherit;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
 }

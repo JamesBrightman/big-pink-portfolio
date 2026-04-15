@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
 
 const PAGE_SIZE = 24;
+const MASONRY_COLUMN_GAP_PX = 16;
+const MASONRY_MIN_COLUMN_WIDTH_REM = 16;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -110,7 +112,7 @@ function FolderDropdownList({
     <div className={indentClass}>
       <Link
         href={folderPathHref(pathSegments)}
-        className={`block whitespace-nowrap px-3 py-2 text-sm font-semibold uppercase tracking-[0.01em] transition text-left ${
+        className={`block whitespace-nowrap px-3 py-2 text-sm font-medium uppercase tracking-[0.01em] transition text-left ${
           isActive ? "italic text-white" : "text-white/80 hover:text-white"
         } ${depth > 0 ? "pl-6" : ""}`}
       >
@@ -142,7 +144,7 @@ function NavFolderItem({ folder, pathSegments, activePath }: NavFolderItemProps)
     <div className="group/nav relative pb-3">
       <Link
         href={folderPathHref(pathSegments)}
-        className={`block whitespace-nowrap pb-3 text-2xl font-semibold uppercase tracking-[0.01em] transition sm:text-3xl ${
+        className={`block whitespace-nowrap pb-3 text-2xl font-medium uppercase tracking-[0.01em] transition sm:text-3xl ${
           isActive ? "italic text-white" : "text-white/85 hover:text-white"
         }`}
       >
@@ -199,6 +201,11 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
   const visibleCards = cards.slice(0, visibleCount);
   const canLoadMore = visibleCount < cards.length;
+  const usedColumns = Math.max(1, Math.min(maxColumns, visibleCards.length || 1));
+  const shouldCenter = visibleCards.length > 0 && visibleCards.length < maxColumns;
+  const masonryWidth = shouldCenter
+    ? `calc(${usedColumns} * ${MASONRY_MIN_COLUMN_WIDTH_REM}rem + ${(usedColumns - 1) * MASONRY_COLUMN_GAP_PX}px)`
+    : "100%";
 
   useEffect(() => {
     const updateColumns = () => {
@@ -262,44 +269,53 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       </header>
 
       {visibleCards.length > 0 ? (
-        <div className="w-full" style={{ columnCount: maxColumns, columnGap: "1rem" }}>
-          {visibleCards.map((asset) => (
-            <article
-              key={`${asset.src}-${asset.name}`}
-              className="group mb-4 break-inside-avoid overflow-hidden rounded-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
-            >
-              <div
-                className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]"
-                style={{ aspectRatio: pickAspectRatio(asset.src) }}
+        <div className="flex w-full justify-center">
+          <div
+            className="w-full"
+            style={{
+              columnCount: shouldCenter ? usedColumns : maxColumns,
+              columnGap: `${MASONRY_COLUMN_GAP_PX}px`,
+              width: masonryWidth,
+            }}
+          >
+            {visibleCards.map((asset) => (
+              <article
+                key={`${asset.src}-${asset.name}`}
+                className="group mb-4 break-inside-avoid overflow-hidden rounded-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
               >
-                {asset.kind === "image" ? (
-                  <Image
-                    src={asset.src}
-                    alt={asset.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <video
-                    src={asset.src}
-                    controls
-                    preload="metadata"
-                    className="h-full w-full object-cover"
-                  />
-                )}
+                <div
+                  className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]"
+                  style={{ aspectRatio: pickAspectRatio(asset.src) }}
+                >
+                  {asset.kind === "image" ? (
+                    <Image
+                      src={asset.src}
+                      alt={asset.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <video
+                      src={asset.src}
+                      controls
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
+                  )}
 
-                <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
-                  <div className="max-w-[80%] text-center text-white">
-                    <p className="text-sm font-semibold tracking-tight">
-                      {new Date(asset.date).toLocaleDateString()}
-                    </p>
-                    <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
+                    <div className="max-w-[80%] text-center text-white">
+                      <p className="text-sm font-semibold tracking-tight">
+                        {new Date(asset.date).toLocaleDateString()}
+                      </p>
+                      <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-[#d8e1ec] bg-white p-10 text-center">
