@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
@@ -15,13 +14,6 @@ function collectFiles(folder: AssetFolder): AssetFile[] {
   return [...folder.files, ...childFiles].sort(
     (a, b) => Date.parse(b.date) - Date.parse(a.date),
   );
-}
-
-function pickAspectRatio(src: string) {
-  const ratios = ["4 / 5", "3 / 4", "1 / 1", "5 / 4", "16 / 9"];
-  const hash = Array.from(src).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
-  return ratios[hash % ratios.length];
 }
 
 function formatAssetDate(date: string) {
@@ -288,43 +280,39 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
             }}
           >
             {visibleCards.map((asset) => (
-              <article
-                key={`${asset.src}-${asset.name}`}
-                className="group mb-4 break-inside-avoid overflow-hidden rounded-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
-              >
-                <div
-                  className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]"
-                  style={{ aspectRatio: pickAspectRatio(asset.src) }}
-                >
-                  {asset.kind === "image" ? (
-                    <Image
-                      src={asset.src}
-                      alt={asset.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <video
-                      src={asset.src}
-                      controls
-                      preload="metadata"
-                      className="h-full w-full object-cover"
-                    />
-                  )}
+            <article
+              key={`${asset.src}-${asset.name}`}
+              className="group mb-4 break-inside-avoid overflow-hidden rounded-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+            >
+              <div className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]">
+                {asset.kind === "image" ? (
+                  <img
+                    src={asset.src}
+                    alt={asset.name}
+                    loading="lazy"
+                    className="block h-auto w-full"
+                  />
+                ) : (
+                  <video
+                    src={asset.src}
+                    controls
+                    preload="metadata"
+                    className="block h-auto w-full"
+                  />
+                )}
 
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
-                    <div className="max-w-[80%] text-center text-white">
-                      <p className="text-sm font-semibold tracking-tight">
-                        {formatAssetDate(asset.date)}
-                      </p>
-                      <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
-                    </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
+                  <div className="max-w-[80%] text-center text-white">
+                    <p className="text-sm font-semibold tracking-tight">
+                      {formatAssetDate(asset.date)}
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
+              </div>
+            </article>
+          ))}
+        </div>
         </div>
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-[#d8e1ec] bg-white p-10 text-center">
