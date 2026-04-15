@@ -18,7 +18,24 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Add Assets
+
+Use the repo command below to add a media file to an asset folder and update that folder's `data.json` in one step.
+
+```bash
+bash scripts/add-asset.sh digital/photo/travel ./path/to/image.png 2026-04-15 "Short description"
+```
+
+- The filename is inferred from the source file name.
+- The date format is enforced as `YYYY-MM-DD` across the app.
+- The description is a required string.
+- The script copies the file into `public/assets/<folder>` and updates that folder's `data.json`.
+
+If you prefer, the same command is available through npm:
+
+```bash
+npm run asset:add -- digital/photo/travel ./path/to/image.png 2026-04-15 "Short description"
+```
 
 ## Learn More
 
