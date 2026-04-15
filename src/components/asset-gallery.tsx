@@ -1,13 +1,12 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
 
 const PAGE_SIZE = 24;
-const MASONRY_COLUMN_GAP_PX = 16;
-const MASONRY_MIN_COLUMN_WIDTH_REM = 16;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -22,6 +21,107 @@ function formatAssetYear(date: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${date}T00:00:00Z`));
+}
+
+type MediaShellProps = {
+  children: ReactNode;
+  loaded: boolean;
+};
+
+function MediaShell({ children, loaded }: MediaShellProps) {
+  return (
+    <div className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]">
+      <div
+        className={`absolute inset-0 bg-gradient-to-br from-white/85 via-white/40 to-white/70 transition-opacity duration-300 ${
+          loaded ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <div className="h-full w-full animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.22)_8%,rgba(255,255,255,0.55)_18%,rgba(255,255,255,0.22)_33%)] bg-[length:200%_100%]" />
+      </div>
+      <div className={`transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+type MediaTileProps = {
+  asset: AssetFile;
+  onOpen: (asset: AssetFile) => void;
+};
+
+function MediaTile({ asset, onOpen }: MediaTileProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(asset)}
+      className="group relative block w-full overflow-hidden rounded-md bg-white text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+      style={{
+        contentVisibility: "auto",
+        containIntrinsicSize: "18rem 28rem",
+      }}
+    >
+      <MediaShell loaded={loaded}>
+        {asset.kind === "image" ? (
+          <img
+            src={asset.src}
+            alt={asset.name}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            onLoad={() => setLoaded(true)}
+            className="block h-auto w-full"
+          />
+        ) : (
+          <video
+            src={asset.src}
+            controls
+            preload="metadata"
+            onLoadedData={() => setLoaded(true)}
+            className="block h-auto w-full"
+          />
+        )}
+      </MediaShell>
+
+      <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
+        <div className="max-w-[80%] text-center text-white">
+          <p className="text-sm font-semibold tracking-tight">{formatAssetYear(asset.date)}</p>
+          <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+type ModalMediaProps = {
+  asset: AssetFile;
+};
+
+function ModalMedia({ asset }: ModalMediaProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <MediaShell loaded={loaded}>
+      {asset.kind === "image" ? (
+        <img
+          src={asset.src}
+          alt={asset.name}
+          onLoad={() => setLoaded(true)}
+          className="block max-h-[92vh] max-w-[96vw] h-auto w-auto object-contain"
+        />
+      ) : (
+        <video
+          src={asset.src}
+          controls
+          autoPlay
+          onLoadedData={() => setLoaded(true)}
+          className="block max-h-[92vh] max-w-[96vw] h-auto w-auto object-contain"
+        />
+      )}
+    </MediaShell>
+  );
 }
 
 function HomeIcon() {
@@ -67,22 +167,6 @@ function sortDropdownFolders(folders: AssetFolder[]) {
 
     return a.name.localeCompare(b.name);
   });
-}
-
-function getMaxColumnsForViewport(width: number) {
-  if (width >= 1280) {
-    return 6;
-  }
-
-  if (width >= 1024) {
-    return 4;
-  }
-
-  if (width >= 768) {
-    return 2;
-  }
-
-  return 1;
 }
 
 type NavFolderItemProps = {
@@ -178,7 +262,7 @@ type AssetGalleryProps = {
 
 export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [maxColumns, setMaxColumns] = useState(6);
+  const [selectedAsset, setSelectedAsset] = useState<AssetFile | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const activePath = initialPath;
   const activeFolder = useMemo(() => {
@@ -201,22 +285,6 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
   const visibleCards = cards.slice(0, visibleCount);
   const canLoadMore = visibleCount < cards.length;
-  const usedColumns = Math.max(1, Math.min(maxColumns, visibleCards.length || 1));
-  const shouldCenter = visibleCards.length > 0 && visibleCards.length < maxColumns;
-  const masonryWidth = shouldCenter
-    ? `calc(${usedColumns} * ${MASONRY_MIN_COLUMN_WIDTH_REM}rem + ${(usedColumns - 1) * MASONRY_COLUMN_GAP_PX}px)`
-    : "100%";
-
-  useEffect(() => {
-    const updateColumns = () => {
-      setMaxColumns(getMaxColumnsForViewport(window.innerWidth));
-    };
-
-    updateColumns();
-    window.addEventListener("resize", updateColumns);
-
-    return () => window.removeEventListener("resize", updateColumns);
-  }, []);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -240,6 +308,26 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
     return () => observer.disconnect();
   }, [canLoadMore, cards.length]);
+
+  useEffect(() => {
+    if (!selectedAsset) {
+      return undefined;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedAsset(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [selectedAsset]);
 
   return (
     <section className="flex min-h-screen w-full flex-col px-4 py-5">
@@ -269,56 +357,20 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       </header>
 
       {visibleCards.length > 0 ? (
-        <div className="flex w-full justify-center">
-          <div
-            className="w-full"
-            style={{
-              columnCount: shouldCenter ? usedColumns : maxColumns,
-              columnGap: `${MASONRY_COLUMN_GAP_PX}px`,
-              width: masonryWidth,
-            }}
-          >
+        <ResponsiveMasonry
+          columnsCountBreakPoints={{
+            0: 1,
+            640: 2,
+            1024: 4,
+            1280: 6,
+          }}
+        >
+          <Masonry gutter="16px">
             {visibleCards.map((asset) => (
-            <article
-              key={`${asset.src}-${asset.name}`}
-              className="group mb-4 break-inside-avoid overflow-hidden rounded-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
-              style={{
-                contentVisibility: "auto",
-                containIntrinsicSize: "1px 400px",
-              }}
-            >
-              <div className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]">
-                {asset.kind === "image" ? (
-                  <img
-                    src={asset.src}
-                    alt={asset.name}
-                    loading="lazy"
-                    decoding="async"
-                    fetchPriority="low"
-                    className="block h-auto w-full"
-                  />
-                ) : (
-                  <video
-                    src={asset.src}
-                    controls
-                    preload="metadata"
-                    className="block h-auto w-full"
-                  />
-                )}
-
-                <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
-                    <div className="max-w-[80%] text-center text-white">
-                      <p className="text-sm font-semibold tracking-tight">
-                        {formatAssetYear(asset.date)}
-                      </p>
-                    <p className="mt-1 text-sm leading-5 text-white/90">{asset.description}</p>
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-        </div>
+              <MediaTile key={`${asset.src}-${asset.name}`} asset={asset} onOpen={setSelectedAsset} />
+            ))}
+          </Masonry>
+        </ResponsiveMasonry>
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-[#d8e1ec] bg-white p-10 text-center">
           <p className="text-lg font-medium text-[#121826]">No media in this folder yet.</p>
@@ -342,6 +394,23 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
           </button>
         </div>
       )}
+
+      {selectedAsset ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedAsset.name}
+          onClick={() => setSelectedAsset(null)}
+        >
+          <div
+            className="flex max-h-[92vh] max-w-[96vw] items-center justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <ModalMedia key={selectedAsset.src} asset={selectedAsset} />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
