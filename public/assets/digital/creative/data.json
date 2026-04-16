@@ -1,18 +1,8 @@
 [
   {
-    "fileName": "test1.png",
-    "description": "Test asset for digital / creative (test1)",
-    "date": "2026-04-11"
-  },
-  {
-    "fileName": "test2.png",
-    "description": "Test asset for digital / creative (test2)",
-    "date": "2026-04-12"
-  },
-  {
-    "fileName": "test3.png",
-    "description": "Test asset for digital / creative (test3)",
-    "date": "2026-04-13"
+    "fileName": "test5.png",
+    "description": "Test asset for digital / creative (test5)",
+    "date": "2026-04-15"
   },
   {
     "fileName": "test4.png",
@@ -20,9 +10,24 @@
     "date": "2026-04-14"
   },
   {
-    "fileName": "test5.png",
-    "description": "Test asset for digital / creative (test5)",
-    "date": "2026-04-15"
+    "fileName": "test3.png",
+    "description": "Test asset for digital / creative (test3)",
+    "date": "2026-04-13"
+  },
+  {
+    "fileName": "test2.png",
+    "description": "Test asset for digital / creative (test2)",
+    "date": "2026-04-12"
+  },
+  {
+    "fileName": "test1.png",
+    "description": "Test asset for digital / creative (test1)",
+    "date": "2026-04-11"
+  },
+  {
+    "fileName": "digi drawing.jpg",
+    "description": "Madonna Inn",
+    "date": "2025-06-18"
   },
   {
     "fileName": "maurice ramen.jpg",
@@ -30,9 +35,109 @@
     "date": "2024-10-27"
   },
   {
-    "fileName": "digi drawing.jpg",
-    "description": "Madonna Inn",
-    "date": "2025-06-18"
+    "fileName": "gaga-mickey.gif",
+    "description": "Gaga Animated Sketch",
+    "date": "2023-08-30"
+  },
+  {
+    "fileName": "bey unique collage.png",
+    "description": "Unique Collage",
+    "date": "2023-05-09"
+  },
+  {
+    "fileName": "selfie girlmirror.jpg",
+    "description": "Selfie",
+    "date": "2022-04-21"
+  },
+  {
+    "fileName": "gaga bafta.jpg",
+    "description": "Gaga",
+    "date": "2022-03-28"
+  },
+  {
+    "fileName": "clown doja.jpg",
+    "description": "Doja Digi",
+    "date": "2022-02-16"
+  },
+  {
+    "fileName": "gagajazz1.jpg",
+    "description": "Gaga Digi Sketch",
+    "date": "2022-01-13"
+  },
+  {
+    "fileName": "ari purple print.jpg",
+    "description": "Ariana Digi Sketch",
+    "date": "2021-12-27"
+  },
+  {
+    "fileName": "lnx print.jpg",
+    "description": "LNX Digi Sketch",
+    "date": "2021-12-27"
+  },
+  {
+    "fileName": "metga print.jpg",
+    "description": "MET Gaga Digi Sketch",
+    "date": "2021-12-21"
+  },
+  {
+    "fileName": "zari.jpg",
+    "description": "Zari Digi Sketch",
+    "date": "2021-12-18"
+  },
+  {
+    "fileName": "positions1.jpg",
+    "description": "Positions",
+    "date": "2021-03-29"
+  },
+  {
+    "fileName": "MADEWITHLOVE2.jpg",
+    "description": "Made With Love",
+    "date": "2021-02-10"
+  },
+  {
+    "fileName": "drawings.jpg",
+    "description": "big PINK pages illustrations",
+    "date": "2021-01-19"
+  },
+  {
+    "fileName": "rainbow yellow.jpg",
+    "description": "Socks",
+    "date": "2020-12-30"
+  },
+  {
+    "fileName": "cruella baddie.png",
+    "description": "Baddie",
+    "date": "2020-10-07"
+  },
+  {
+    "fileName": "gobble me alice.jpg",
+    "description": "WAP Alice",
+    "date": "2020-09-22"
+  },
+  {
+    "fileName": "gobble me swallow me.jpg",
+    "description": "WAP Apples",
+    "date": "2020-09-22"
+  },
+  {
+    "fileName": "BPB cherry draft.jpg",
+    "description": "Fruit Draft",
+    "date": "2020-09-01"
+  },
+  {
+    "fileName": "love bites.jpg",
+    "description": "Love Bites",
+    "date": "2020-06-22"
+  },
+  {
+    "fileName": "sundae girl.jpg",
+    "description": "Sundae Girl",
+    "date": "2020-06-22"
+  },
+  {
+    "fileName": "not ur baby nvr will be.jpg",
+    "description": "Not Ur Baby",
+    "date": "2020-04-17"
   },
   {
     "fileName": "supersunset.gif",

@@ -1,18 +1,8 @@
 [
   {
-    "fileName": "test1.png",
-    "description": "Test asset for traditional (test1)",
-    "date": "2026-06-30"
-  },
-  {
-    "fileName": "test2.png",
-    "description": "Test asset for traditional (test2)",
-    "date": "2026-07-01"
-  },
-  {
-    "fileName": "test3.png",
-    "description": "Test asset for traditional (test3)",
-    "date": "2026-07-02"
+    "fileName": "test5.png",
+    "description": "Test asset for traditional (test5)",
+    "date": "2026-07-04"
   },
   {
     "fileName": "test4.png",
@@ -20,8 +10,43 @@
     "date": "2026-07-03"
   },
   {
-    "fileName": "test5.png",
-    "description": "Test asset for traditional (test5)",
-    "date": "2026-07-04"
+    "fileName": "test3.png",
+    "description": "Test asset for traditional (test3)",
+    "date": "2026-07-02"
+  },
+  {
+    "fileName": "test2.png",
+    "description": "Test asset for traditional (test2)",
+    "date": "2026-07-01"
+  },
+  {
+    "fileName": "test1.png",
+    "description": "Test asset for traditional (test1)",
+    "date": "2026-06-30"
+  },
+  {
+    "fileName": "slut.jpg",
+    "description": "Slut Watercolour",
+    "date": "2024-01-03"
+  },
+  {
+    "fileName": "artpop-collage-1.jpg",
+    "description": "ARTPOP I",
+    "date": "2023-05-09"
+  },
+  {
+    "fileName": "artpop-collage-2.jpg",
+    "description": "ARTPOP II",
+    "date": "2023-05-09"
+  },
+  {
+    "fileName": "collgaging.gif",
+    "description": "Collage Process",
+    "date": "2023-05-09"
+  },
+  {
+    "fileName": "kawaii-white-and-pink-chain-bows-y2k-pastel-ankle-socks.jpg",
+    "description": "Socks",
+    "date": "2020-11-26"
   }
 ]
