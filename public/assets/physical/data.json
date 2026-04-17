@@ -1,30 +1,5 @@
 [
   {
-    "fileName": "test5.png",
-    "description": "Test asset for physical (test5)",
-    "date": "2026-06-24"
-  },
-  {
-    "fileName": "test4.png",
-    "description": "Test asset for physical (test4)",
-    "date": "2026-06-23"
-  },
-  {
-    "fileName": "test3.png",
-    "description": "Test asset for physical (test3)",
-    "date": "2026-06-22"
-  },
-  {
-    "fileName": "test2.png",
-    "description": "Test asset for physical (test2)",
-    "date": "2026-06-21"
-  },
-  {
-    "fileName": "test1.png",
-    "description": "Test asset for physical (test1)",
-    "date": "2026-06-20"
-  },
-  {
     "fileName": "IMG_8497.jpg",
     "description": "Animal Set",
     "date": "2026-03-15"
@@ -61,11 +36,6 @@
   },
   {
     "fileName": "31staug2024.JPG",
-    "description": "Patch Upcycled Set",
-    "date": "2024-09-06"
-  },
-  {
-    "fileName": "6thsep2024 2.JPG",
     "description": "Patch Upcycled Set",
     "date": "2024-09-06"
   },

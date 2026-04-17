@@ -1,30 +1,5 @@
 [
   {
-    "fileName": "test5.png",
-    "description": "Test asset for digital / photo / travel (test5)",
-    "date": "2026-06-04"
-  },
-  {
-    "fileName": "test4.png",
-    "description": "Test asset for digital / photo / travel (test4)",
-    "date": "2026-06-03"
-  },
-  {
-    "fileName": "test3.png",
-    "description": "Test asset for digital / photo / travel (test3)",
-    "date": "2026-06-02"
-  },
-  {
-    "fileName": "test2.png",
-    "description": "Test asset for digital / photo / travel (test2)",
-    "date": "2026-06-01"
-  },
-  {
-    "fileName": "test1.png",
-    "description": "Test asset for digital / photo / travel (test1)",
-    "date": "2026-05-31"
-  },
-  {
     "fileName": "DSC08612.jpg",
     "description": "Cape Town, South Africa",
     "date": "2026-03-12"
@@ -38,16 +13,6 @@
     "fileName": "DSC08474.jpg",
     "description": "Cape Town, South Africa",
     "date": "2026-03-04"
-  },
-  {
-    "fileName": "._DSC07329 v2.jpg",
-    "description": "Las Vegas, USA",
-    "date": "2026-02-23"
-  },
-  {
-    "fileName": "DSC07768.jpg",
-    "description": "Las Vegas, USA",
-    "date": "2026-02-16"
   },
   {
     "fileName": "DSC07843.jpg",
