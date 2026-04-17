@@ -26,19 +26,30 @@ function formatAssetYear(date: string) {
 type MediaShellProps = {
   children: ReactNode;
   loaded: boolean;
+  aspectRatio?: string;
 };
 
-function MediaShell({ children, loaded }: MediaShellProps) {
+function MediaShell({ children, loaded, aspectRatio }: MediaShellProps) {
   return (
-    <div className="relative w-full overflow-hidden rounded-md border-[3px] border-white bg-[#f3f6fb]">
+    <div
+      className="relative w-full overflow-hidden rounded-[18px] border border-white/55 bg-[#dfe3ea] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
+      style={aspectRatio ? { aspectRatio } : undefined}
+    >
       <div
-        className={`absolute inset-0 bg-gradient-to-br from-white/85 via-white/40 to-white/70 transition-opacity duration-300 ${
-          loaded ? "opacity-0" : "opacity-100"
+        className={`absolute inset-0 overflow-hidden rounded-[18px] transition-opacity duration-300 ${
+          loaded ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
+        aria-hidden={loaded}
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#e5e8ee_0%,#d9dee6_100%)]" />
+        <div className="absolute inset-[10px] rounded-[14px] bg-[rgba(255,255,255,0.14)]" />
+        <div className="absolute inset-y-0 -left-1/2 w-1/2 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.16)_45%,rgba(255,255,255,0.45)_50%,rgba(255,255,255,0.16)_55%,rgba(255,255,255,0)_100%)] animate-[loading-shimmer_2.2s_ease-in-out_infinite]" />
+      </div>
+      <div
+        className={`transition-opacity duration-300 ${aspectRatio ? "absolute inset-0" : ""} ${
+          loaded ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="h-full w-full animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.22)_8%,rgba(255,255,255,0.55)_18%,rgba(255,255,255,0.22)_33%)] bg-[length:200%_100%]" />
-      </div>
-      <div className={`transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}>
         {children}
       </div>
     </div>
@@ -48,31 +59,34 @@ function MediaShell({ children, loaded }: MediaShellProps) {
 type MediaTileProps = {
   asset: AssetFile;
   onOpen: (asset: AssetFile) => void;
+  priority: boolean;
 };
 
-function MediaTile({ asset, onOpen }: MediaTileProps) {
+function MediaTile({ asset, onOpen, priority }: MediaTileProps) {
   const [loaded, setLoaded] = useState(false);
+  const aspectRatio =
+    asset.kind === "image" && asset.width && asset.height ? `${asset.width} / ${asset.height}` : "4 / 5";
 
   return (
     <button
       type="button"
       onClick={() => onOpen(asset)}
-      className="group relative block w-full overflow-hidden rounded-md bg-white text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+      className="group relative block w-full overflow-hidden rounded-[18px] bg-white text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "18rem 28rem",
       }}
     >
-      <MediaShell loaded={loaded}>
+      <MediaShell loaded={loaded} aspectRatio={asset.kind === "image" ? aspectRatio : undefined}>
         {asset.kind === "image" ? (
           <img
             src={asset.src}
             alt={asset.name}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority="low"
+            fetchPriority={priority ? "high" : "low"}
             onLoad={() => setLoaded(true)}
-            className="block h-auto w-full"
+            className="block h-full w-full object-cover"
           />
         ) : (
           <video
@@ -80,7 +94,7 @@ function MediaTile({ asset, onOpen }: MediaTileProps) {
             controls
             preload="metadata"
             onLoadedData={() => setLoaded(true)}
-            className="block h-auto w-full"
+            className="block h-full w-full object-cover"
           />
         )}
       </MediaShell>
@@ -366,8 +380,13 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
           }}
         >
           <Masonry gutter="16px">
-            {visibleCards.map((asset) => (
-              <MediaTile key={`${asset.src}-${asset.name}`} asset={asset} onOpen={setSelectedAsset} />
+            {visibleCards.map((asset, index) => (
+              <MediaTile
+                key={`${asset.src}-${asset.name}`}
+                asset={asset}
+                onOpen={setSelectedAsset}
+                priority={index < 8}
+              />
             ))}
           </Masonry>
         </ResponsiveMasonry>

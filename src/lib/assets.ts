@@ -26,6 +26,8 @@ export type AssetFile = {
   kind: AssetKind;
   description: string;
   date: string;
+  width?: number;
+  height?: number;
 };
 
 export type AssetFolder = {
@@ -47,6 +49,11 @@ const MEDIA_EXTENSIONS = new Set([
   ".webm",
   ".webp",
 ]);
+
+type AssetDimensions = {
+  width: number;
+  height: number;
+};
 
 function toPublicSrc(filePath: string) {
   return filePath.split(path.sep).join("/");
@@ -90,6 +97,62 @@ async function readFolderMetadata(folderPath: string) {
   }
 }
 
+async function readFileHeader(filePath: string, length: number) {
+  const file = await fs.open(filePath, "r");
+
+  try {
+    const buffer = Buffer.alloc(length);
+    const { bytesRead } = await file.read(buffer, 0, length, 0);
+
+    return buffer.subarray(0, bytesRead);
+  } finally {
+    await file.close();
+  }
+}
+
+function parseWebpDimensions(buffer: Buffer): AssetDimensions | null {
+  if (buffer.length < 30 || buffer.toString("ascii", 0, 4) !== "RIFF" || buffer.toString("ascii", 8, 12) !== "WEBP") {
+    return null;
+  }
+
+  const chunkType = buffer.toString("ascii", 12, 16);
+
+  if (chunkType === "VP8X" && buffer.length >= 30) {
+    return {
+      width: 1 + buffer.readUIntLE(24, 3),
+      height: 1 + buffer.readUIntLE(27, 3),
+    };
+  }
+
+  if (chunkType === "VP8L" && buffer.length >= 25) {
+    const bits = buffer.readUInt32LE(21);
+
+    return {
+      width: (bits & 0x3fff) + 1,
+      height: ((bits >> 14) & 0x3fff) + 1,
+    };
+  }
+
+  if (chunkType === "VP8 " && buffer.length >= 30) {
+    return {
+      width: buffer.readUInt16LE(26),
+      height: buffer.readUInt16LE(28),
+    };
+  }
+
+  return null;
+}
+
+async function readImageDimensions(filePath: string): Promise<AssetDimensions | null> {
+  if (path.extname(filePath).toLowerCase() !== ".webp") {
+    return null;
+  }
+
+  const buffer = await readFileHeader(filePath, 64);
+
+  return parseWebpDimensions(buffer);
+}
+
 async function readFolder(folderPath: string, relativeSegments: string[]): Promise<AssetFolder> {
   const entries = await fs.readdir(folderPath, { withFileTypes: true });
   const folders: AssetFolder[] = [];
@@ -124,6 +187,7 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
       src: `/${toPublicSrc(path.join("assets", ...relativeSegments, entry.name))}`,
       kind,
       ...metadata,
+      ...(kind === "image" ? await readImageDimensions(nextPath) : null),
     });
   }
 
