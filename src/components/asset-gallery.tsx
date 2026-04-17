@@ -77,6 +77,7 @@ type FolderDropdownListProps = {
   pathSegments: string[];
   activePath: string[];
   depth?: number;
+  onNavigate?: () => void;
 };
 
 function FolderDropdownList({
@@ -84,6 +85,7 @@ function FolderDropdownList({
   pathSegments,
   activePath,
   depth = 0,
+  onNavigate,
 }: FolderDropdownListProps) {
   const isActive = isPathActive(activePath, pathSegments);
   const hasChildren = folder.folders.length > 0;
@@ -93,6 +95,7 @@ function FolderDropdownList({
     <div className={indentClass}>
       <Link
         href={folderPathHref(pathSegments)}
+        onClick={onNavigate}
         className={`block whitespace-nowrap px-3 py-2 text-sm font-medium uppercase tracking-[0.01em] transition text-left ${
           isActive ? "italic text-white" : "text-white/80 hover:text-white"
         } ${depth > 0 ? "pl-6" : ""}`}
@@ -109,6 +112,7 @@ function FolderDropdownList({
               pathSegments={[...pathSegments, child.name]}
               activePath={activePath}
               depth={depth + 1}
+              onNavigate={onNavigate}
             />
           ))}
         </div>
@@ -149,6 +153,111 @@ function NavFolderItem({ folder, pathSegments, activePath }: NavFolderItemProps)
         </div>
       )}
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7">
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7">
+      <path
+        d="M6 6l12 12M18 6L6 18"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function MobileNav({
+  tree,
+  activePath,
+  isOpen,
+  onOpen,
+  onClose,
+}: {
+  tree: AssetFolder;
+  activePath: string[];
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={isOpen ? "Close menu" : "Open menu"}
+        aria-expanded={isOpen}
+        onClick={isOpen ? onClose : onOpen}
+        className="relative z-50 rounded-full border border-white/35 bg-white/12 p-2 text-white backdrop-blur-sm transition hover:bg-white/18 lg:hidden"
+      >
+        {isOpen ? <CloseIcon /> : <MenuIcon />}
+      </button>
+
+      {isOpen ? (
+        <div className="fixed inset-0 z-40 bg-black/45 lg:hidden" onClick={onClose}>
+          <div
+            className="absolute right-0 top-0 flex h-full w-[min(86vw,24rem)] flex-col overflow-y-auto border-l border-white/15 bg-[#ec5fb9] px-5 pb-8 pt-24 text-white shadow-[-24px_0_60px_rgba(0,0,0,0.28)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Link
+              href="/"
+              onClick={onClose}
+              className={`mb-4 block border-b border-white/20 pb-4 text-2xl font-medium uppercase tracking-[0.01em] ${
+                activePath.length === 0 ? "italic text-white" : "text-white/90"
+              }`}
+            >
+              home
+            </Link>
+
+            <div className="flex flex-col gap-2">
+              {tree.folders.map((folder) => (
+                <div key={folder.name} className="border-b border-white/12 pb-2 last:border-b-0">
+                  <Link
+                    href={folderPathHref([folder.name])}
+                    onClick={onClose}
+                    className={`block py-2 text-2xl font-medium uppercase tracking-[0.01em] ${
+                      isPathActive(activePath, [folder.name]) ? "italic text-white" : "text-white/90"
+                    }`}
+                  >
+                    {folder.name}
+                  </Link>
+
+                  {folder.folders.length > 0 ? (
+                    <div className="pb-2">
+                      {sortDropdownFolders(folder.folders).map((child) => (
+                        <FolderDropdownList
+                          key={child.name}
+                          folder={child}
+                          pathSegments={[folder.name, child.name]}
+                          activePath={activePath}
+                          onNavigate={onClose}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -208,6 +317,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     () => true,
     () => false,
   );
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetFile | null>(null);
   const activePath = initialPath;
   let activeFolder = tree;
@@ -226,22 +336,25 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const cards = collectFiles(activeFolder);
 
   useEffect(() => {
-    if (!selectedAsset) {
+    if (!selectedAsset && !isMobileNavOpen) {
       return undefined;
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setSelectedAsset(null);
+        setIsMobileNavOpen(false);
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
     };
-  }, [selectedAsset]);
+  }, [isMobileNavOpen, selectedAsset]);
 
   return (
     <section className="flex min-h-screen w-full flex-col px-4 py-5">
@@ -259,7 +372,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
             <HomeIcon />
           </Link>
 
-          <div className="flex flex-wrap items-center justify-end gap-8">
+          <div className="hidden flex-wrap items-center justify-end gap-8 lg:flex">
             {tree.folders.map((folder) => (
               <NavFolderItem
                 key={folder.name}
@@ -269,6 +382,14 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
               />
             ))}
           </div>
+
+          <MobileNav
+            tree={tree}
+            activePath={activePath}
+            isOpen={isMobileNavOpen}
+            onOpen={() => setIsMobileNavOpen(true)}
+            onClose={() => setIsMobileNavOpen(false)}
+          />
         </nav>
       </header>
 
