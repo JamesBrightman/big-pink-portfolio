@@ -14,6 +14,13 @@ function collectFiles(folder: AssetFolder): AssetFile[] {
   );
 }
 
+function formatAssetYear(date: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
 function subscribeToHydration() {
   return () => {};
 }
@@ -440,13 +447,26 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
           onClick={() => setSelectedAsset(null)}
         >
-          <img
-            src={selectedAsset.src}
-            alt={selectedAsset.name}
-            decoding="async"
-            className="max-h-[95vh] max-w-[95vw] rounded-[18px] object-contain"
+          <div
+            className="flex max-h-[95vh] max-w-[95vw] flex-col items-center"
             onClick={(event) => event.stopPropagation()}
-          />
+          >
+            <img
+              src={selectedAsset.src}
+              alt={selectedAsset.name}
+              decoding="async"
+              className="max-h-[82vh] max-w-[95vw] rounded-[18px] object-contain"
+            />
+
+            <div className="mt-4 w-full text-center text-white lg:hidden">
+              <p className="text-sm font-semibold tracking-tight">
+                {formatAssetYear(selectedAsset.date)}
+              </p>
+              <p className="mt-1 text-sm leading-5 text-white/90">
+                {selectedAsset.description}
+              </p>
+            </div>
+          </div>
         </div>
       ) : null}
     </section>
