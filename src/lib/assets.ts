@@ -38,6 +38,7 @@ export type AssetFolder = {
 };
 
 const ASSET_ROOT = path.join(process.cwd(), "public", "assets");
+const PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const MEDIA_EXTENSIONS = new Set([
   ".avif",
   ".gif",
@@ -184,7 +185,7 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
 
     files.push({
       name: entry.name,
-      src: `/${toPublicSrc(path.join("assets", ...relativeSegments, entry.name))}`,
+      src: `${PUBLIC_BASE_PATH}/${toPublicSrc(path.join("assets", ...relativeSegments, entry.name))}`,
       kind,
       ...metadata,
       ...(kind === "image" ? await readImageDimensions(nextPath) : null),

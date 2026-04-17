@@ -1,34 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This project uses Next.js and exports a static site for GitHub Pages.
 
-## Getting Started
+## Local development
 
-First, run the development server:
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## GitHub Pages build
 
-## Learn More
+Build the static export with:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build:pages
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This writes the production-ready static site to `out/`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+GitHub Pages deployment is handled by `.github/workflows/deploy-pages.yml`. On pushes to `main`, the workflow:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. installs dependencies
+2. runs `npm run build:pages`
+3. uploads `out/`
+4. deploys the exported site to GitHub Pages
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Asset updates
+
+Because the site is now static, browser uploads are disabled.
+
+To update content:
+
+1. add or edit files under `public/assets`
+2. update the matching `data.json`
+3. rebuild and redeploy
