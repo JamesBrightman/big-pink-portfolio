@@ -342,6 +342,8 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   );
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetFile | null>(null);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [hasScrolledDown, setHasScrolledDown] = useState(false);
   const activePath = initialPath;
   let activeFolder = tree;
 
@@ -379,10 +381,45 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     };
   }, [isMobileNavOpen, selectedAsset]);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const onScroll = () => {
+      const nextScrollY = window.scrollY;
+      const isNearTop = nextScrollY < 24;
+
+      setHasScrolledDown(!isNearTop);
+
+      if (isNearTop) {
+        setIsHeaderVisible(true);
+      } else if (nextScrollY < lastScrollY) {
+        setIsHeaderVisible(true);
+      } else if (nextScrollY > lastScrollY) {
+        setIsHeaderVisible(false);
+      }
+
+      lastScrollY = nextScrollY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
   return (
     <section className="flex min-h-screen w-full flex-col px-4 py-5">
-      <header className="mb-4 bg-transparent">
-        <nav className="flex items-center justify-between px-0 py-4">
+      <header
+        className={`sticky top-0 z-30 mb-4 bg-transparent transition-transform duration-300 ${
+          isHeaderVisible ? "translate-y-0" : "-translate-y-[calc(100%+0.5rem)]"
+        }`}
+      >
+        <nav
+          className={`flex items-center justify-between px-0 py-4 transition-colors duration-300 ${
+            hasScrolledDown ? "bg-[#ffa4fa]" : "bg-transparent"
+          }`}
+        >
           <Link
             href="/"
             aria-label="Home"
