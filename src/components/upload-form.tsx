@@ -13,6 +13,10 @@ type DirectoryPickerWindow = Window &
       mode?: "read" | "readwrite";
     }) => Promise<DirectoryHandle>;
   };
+type ImageBitmapWithOrientationOptions = ImageBitmapOptions & {
+  imageOrientation?: "from-image" | "flipY" | "none";
+};
+const localUploadHelperUrl = process.env.NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL ?? "";
 
 function isDirectoryHandle(value: unknown): value is DirectoryHandle {
   return Boolean(value) && typeof value === "object";
@@ -73,7 +77,16 @@ async function convertImageToWebp(file: File): Promise<Blob> {
     return file;
   }
 
-  const imageBitmap = await createImageBitmap(file);
+  let imageBitmap: ImageBitmap;
+
+  try {
+    imageBitmap = await createImageBitmap(file, {
+      imageOrientation: "from-image",
+    } as ImageBitmapWithOrientationOptions);
+  } catch {
+    imageBitmap = await createImageBitmap(file);
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = imageBitmap.width;
   canvas.height = imageBitmap.height;
@@ -101,6 +114,77 @@ async function convertImageToWebp(file: File): Promise<Blob> {
 function fileBaseName(fileName: string) {
   const dotIndex = fileName.lastIndexOf(".");
   return dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+}
+
+function getTargetAsset(file: File) {
+  if (file.type === "image/webp") {
+    return {
+      fileName: `${fileBaseName(file.name)}.webp`,
+      data: file as BlobPart,
+      outputLabel: "webp",
+    };
+  }
+
+  return {
+    fileName: `${fileBaseName(file.name)}.webp`,
+    data: null as BlobPart | null,
+    outputLabel: isGif(file) ? "animated webp" : "webp",
+  };
+}
+
+function isGif(file: File) {
+  return file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
+}
+
+async function convertWithLocalHelper(file: File): Promise<Blob> {
+  if (!localUploadHelperUrl) {
+    throw new Error("Local upload helper is unavailable.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${localUploadHelperUrl}/convert`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let message = "Local conversion failed.";
+
+    try {
+      const payload = (await response.json()) as { error?: string };
+      if (payload.error) {
+        message = payload.error;
+      }
+    } catch {}
+
+    throw new Error(message);
+  }
+
+  return response.blob();
+}
+
+async function buildUploadAsset(file: File): Promise<BlobPart> {
+  if (file.type === "image/webp") {
+    return file;
+  }
+
+  if (localUploadHelperUrl) {
+    try {
+      return await convertWithLocalHelper(file);
+    } catch (error) {
+      if (isGif(file)) {
+        throw error;
+      }
+    }
+  }
+
+  if (isGif(file)) {
+    throw new Error("Animated GIF conversion requires the local upload helper. Use npm run dev or npm run start.");
+  }
+
+  return convertImageToWebp(file);
 }
 
 export function UploadForm({ folderOptions }: UploadFormProps) {
@@ -196,10 +280,11 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
       const originalsDirectory = await getDirectoryHandle(repoRootHandle, ["originals"], true);
 
       const originalName = fileValue.name;
-      const webpName = `${fileBaseName(originalName)}.webp`;
+      const targetAsset = getTargetAsset(fileValue);
+      const outputName = targetAsset.fileName;
 
-      if (await fileExists(assetDirectory, webpName)) {
-        throw new Error("A webp with that name already exists in the selected folder.");
+      if (await fileExists(assetDirectory, outputName)) {
+        throw new Error(`An asset with that name already exists in the selected folder.`);
       }
 
       if (await fileExists(originalsDirectory, originalName)) {
@@ -217,24 +302,26 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
         throw new Error("data.json must contain an array of asset entries.");
       }
 
-      if (metadata.some((item) => item.fileName === webpName)) {
-        throw new Error("Metadata already exists for that webp file.");
+      if (metadata.some((item) => item.fileName === outputName)) {
+        throw new Error("Metadata already exists for that asset file.");
       }
 
-      const webpBlob = await convertImageToWebp(fileValue);
+      const outputData = targetAsset.data ?? (await buildUploadAsset(fileValue));
 
       await writeFile(originalsDirectory, originalName, fileValue);
-      await writeFile(assetDirectory, webpName, webpBlob);
+      await writeFile(assetDirectory, outputName, outputData);
 
       metadata.push({
-        fileName: webpName,
+        fileName: outputName,
         description: descriptionValue.trim(),
         date: dateValue.trim(),
       });
 
       await writeFile(assetDirectory, "data.json", `${JSON.stringify(metadata, null, 2)}\n`);
 
-      setStatus(`Added ${webpName} to ${folderValue} and copied ${originalName} into originals.`);
+      setStatus(
+        `Added ${outputName} to ${folderValue} as ${targetAsset.outputLabel} and copied ${originalName} into originals.`,
+      );
       formRef.current?.reset();
       if (fileInputRef.current) {
         fileInputRef.current.value = "";

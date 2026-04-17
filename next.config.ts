@@ -15,12 +15,14 @@ const nextConfig: NextConfig = {
         env: {
           NEXT_PUBLIC_BASE_PATH: repoBasePath,
           NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD: "false",
+          NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL: "",
         },
       }
     : {
         env: {
           NEXT_PUBLIC_BASE_PATH: "",
           NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD: "true",
+          NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL: "http://127.0.0.1:3210",
         },
       }),
 };

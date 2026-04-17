@@ -39,8 +39,9 @@ export default async function UploadPage() {
               </p>
 
               <p>
-                copy the original file into <span className="font-medium">originals</span>, convert the asset
-                to <span className="font-medium">.webp</span>, place it in the selected folder under{" "}
+                copy the original file into <span className="font-medium">originals</span>, convert images
+                to <span className="font-medium">.webp</span> including animated GIF uploads, place the
+                result in the selected folder under{" "}
                 <span className="font-medium">public/assets</span>, and update that folder&apos;s{" "}
                 <span className="font-medium">data.json</span>.
               </p>
