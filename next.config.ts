@@ -14,11 +14,13 @@ const nextConfig: NextConfig = {
         assetPrefix: repoBasePath,
         env: {
           NEXT_PUBLIC_BASE_PATH: repoBasePath,
+          NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD: "false",
         },
       }
     : {
         env: {
           NEXT_PUBLIC_BASE_PATH: "",
+          NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD: "true",
         },
       }),
 };
