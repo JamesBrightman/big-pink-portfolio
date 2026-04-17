@@ -128,7 +128,11 @@ function FolderDropdownList({
   );
 }
 
-function NavFolderItem({ folder, pathSegments, activePath }: NavFolderItemProps) {
+function NavFolderItem({
+  folder,
+  pathSegments,
+  activePath,
+}: NavFolderItemProps) {
   const isActive = isPathActive(activePath, pathSegments);
   const hasChildren = folder.folders.length > 0;
 
@@ -217,7 +221,10 @@ function MobileNav({
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-40 bg-black/45 lg:hidden" onClick={onClose}>
+        <div
+          className="fixed inset-0 z-40 bg-black/45 lg:hidden"
+          onClick={onClose}
+        >
           <div
             className="absolute right-0 top-0 flex h-full w-[min(86vw,24rem)] flex-col overflow-y-auto border-l border-white/15 bg-[#ec5fb9] px-5 pb-8 pt-24 text-white shadow-[-24px_0_60px_rgba(0,0,0,0.28)]"
             onClick={(event) => event.stopPropagation()}
@@ -234,12 +241,17 @@ function MobileNav({
 
             <div className="flex flex-col gap-2">
               {tree.folders.map((folder) => (
-                <div key={folder.name} className="border-b border-white/12 pb-2 last:border-b-0">
+                <div
+                  key={folder.name}
+                  className="border-b border-white/12 pb-2 last:border-b-0"
+                >
                   <Link
                     href={folderPathHref([folder.name])}
                     onClick={onClose}
                     className={`block py-2 text-2xl font-medium uppercase tracking-[0.01em] ${
-                      isPathActive(activePath, [folder.name]) ? "italic text-white" : "text-white/90"
+                      isPathActive(activePath, [folder.name])
+                        ? "italic text-white"
+                        : "text-white/90"
                     }`}
                   >
                     {folder.name}
@@ -283,7 +295,11 @@ function MediaCard({
   return (
     <div className="group relative overflow-hidden rounded-[18px] border border-white/55 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
       {asset.kind === "image" ? (
-        <button type="button" onClick={() => onOpen(asset)} className="block w-full">
+        <button
+          type="button"
+          onClick={() => onOpen(asset)}
+          className="block w-full"
+        >
           <img
             src={asset.src}
             alt={asset.name}
@@ -404,7 +420,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
         hasMounted ? (
           <ResponsiveMasonry
             columnsCountBreakPoints={{
-              0: 1,
+              0: 2,
               640: 2,
               1024: 4,
               1280: 6,
@@ -433,7 +449,9 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
         )
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-[#d8e1ec] bg-white p-10 text-center">
-          <p className="text-lg font-medium text-[#121826]">No media in this folder yet.</p>
+          <p className="text-lg font-medium text-[#121826]">
+            No media in this folder yet.
+          </p>
           <p className="mt-2 text-sm leading-6 text-[#5c6675]">
             Add images or videos to{" "}
             <span className="font-medium text-[#2f6bed]">public/assets</span>{" "}
