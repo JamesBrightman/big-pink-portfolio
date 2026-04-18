@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Big Pink Portfolio",
-  description: "A portfolio gallery with folder-driven, Pinterest-style media walls.",
+  description: "Creative portfolio for bigpinkenergy",
 };
 
 export default function RootLayout({
