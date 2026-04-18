@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 
 const repoName = "big-pink-portfolio";
 const isStaticExport = process.env.STATIC_EXPORT === "true";
+const useRepoSubpath = process.env.GITHUB_PAGES_REPO_SUBPATH === "true";
 const repoBasePath = `/${repoName}`;
+const staticBasePath = useRepoSubpath ? repoBasePath : "";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -10,10 +12,14 @@ const nextConfig: NextConfig = {
     ? {
         output: "export",
         trailingSlash: true,
-        basePath: repoBasePath,
-        assetPrefix: repoBasePath,
+        ...(staticBasePath
+          ? {
+              basePath: staticBasePath,
+              assetPrefix: staticBasePath,
+            }
+          : {}),
         env: {
-          NEXT_PUBLIC_BASE_PATH: repoBasePath,
+          NEXT_PUBLIC_BASE_PATH: staticBasePath,
           NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD: "false",
           NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL: "",
         },
