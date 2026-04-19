@@ -10,7 +10,7 @@ export default async function UploadPage() {
     .map((segments) => segments.join("/"));
 
   return (
-    <main className="min-h-screen px-4 py-5 text-[#121826]">
+    <main className="px-4 py-5 text-[#121826]">
       <div className="mx-auto max-w-3xl rounded-2xl border border-white/30 bg-white/92 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-md">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
