@@ -311,7 +311,10 @@ function MediaCard({
       ) : (
         <video
           src={asset.src}
-          controls
+          autoPlay
+          loop
+          muted
+          playsInline
           preload="metadata"
           className="block h-auto w-full"
         />
