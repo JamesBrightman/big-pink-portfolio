@@ -17,6 +17,7 @@ type ImageBitmapWithOrientationOptions = ImageBitmapOptions & {
   imageOrientation?: "from-image" | "flipY" | "none";
 };
 const localUploadHelperUrl = process.env.NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL ?? "";
+const THUMBNAIL_MAX_WIDTH = 420;
 
 function isDirectoryHandle(value: unknown): value is DirectoryHandle {
   return Boolean(value) && typeof value === "object";
@@ -72,8 +73,13 @@ async function fileExists(
   }
 }
 
-async function convertImageToWebp(file: File): Promise<Blob> {
-  if (file.type === "image/webp") {
+async function convertImageToWebp(
+  file: File,
+  options?: {
+    maxWidth?: number;
+  },
+): Promise<Blob> {
+  if (file.type === "image/webp" && !options?.maxWidth) {
     return file;
   }
 
@@ -88,8 +94,15 @@ async function convertImageToWebp(file: File): Promise<Blob> {
   }
 
   const canvas = document.createElement("canvas");
-  canvas.width = imageBitmap.width;
-  canvas.height = imageBitmap.height;
+  const maxWidth = options?.maxWidth;
+  const targetWidth =
+    maxWidth && imageBitmap.width > maxWidth ? maxWidth : imageBitmap.width;
+  const targetHeight = Math.round(
+    imageBitmap.height * (targetWidth / imageBitmap.width),
+  );
+
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
 
   const context = canvas.getContext("2d");
   if (!context) {
@@ -97,11 +110,11 @@ async function convertImageToWebp(file: File): Promise<Blob> {
     throw new Error("Canvas is unavailable in this browser");
   }
 
-  context.drawImage(imageBitmap, 0, 0);
+  context.drawImage(imageBitmap, 0, 0, targetWidth, targetHeight);
   imageBitmap.close();
 
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, "image/webp", 0.9);
+    canvas.toBlob(resolve, "image/webp", maxWidth ? 0.76 : 0.9);
   });
 
   if (!blob) {
@@ -136,13 +149,21 @@ function isGif(file: File) {
   return file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
 }
 
-async function convertWithLocalHelper(file: File): Promise<Blob> {
+async function convertWithLocalHelper(
+  file: File,
+  options?: {
+    maxWidth?: number;
+  },
+): Promise<Blob> {
   if (!localUploadHelperUrl) {
     throw new Error("Local upload helper is unavailable.");
   }
 
   const formData = new FormData();
   formData.append("file", file);
+  if (options?.maxWidth) {
+    formData.append("maxWidth", String(options.maxWidth));
+  }
 
   const response = await fetch(`${localUploadHelperUrl}/convert`, {
     method: "POST",
@@ -165,14 +186,21 @@ async function convertWithLocalHelper(file: File): Promise<Blob> {
   return response.blob();
 }
 
-async function buildUploadAsset(file: File): Promise<BlobPart> {
+async function buildUploadAsset(
+  file: File,
+  options?: {
+    maxWidth?: number;
+  },
+): Promise<BlobPart> {
   if (file.type === "image/webp") {
-    return file;
+    if (!options?.maxWidth) {
+      return file;
+    }
   }
 
   if (localUploadHelperUrl) {
     try {
-      return await convertWithLocalHelper(file);
+      return await convertWithLocalHelper(file, options);
     } catch (error) {
       if (isGif(file)) {
         throw error;
@@ -184,7 +212,7 @@ async function buildUploadAsset(file: File): Promise<BlobPart> {
     throw new Error("Animated GIF conversion requires the local upload helper. Use npm run dev or npm run start.");
   }
 
-  return convertImageToWebp(file);
+  return convertImageToWebp(file, options);
 }
 
 export function UploadForm({ folderOptions }: UploadFormProps) {
@@ -277,6 +305,11 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
         repoRootHandle,
         ["public", "assets", ...folderSegments],
       );
+      const thumbnailDirectory = await getDirectoryHandle(
+        repoRootHandle,
+        ["public", "assets-thumbs", ...folderSegments],
+        true,
+      );
       const originalsDirectory = await getDirectoryHandle(repoRootHandle, ["originals"], true);
 
       const originalName = fileValue.name;
@@ -307,9 +340,13 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
       }
 
       const outputData = targetAsset.data ?? (await buildUploadAsset(fileValue));
+      const thumbnailData = await buildUploadAsset(fileValue, {
+        maxWidth: THUMBNAIL_MAX_WIDTH,
+      });
 
       await writeFile(originalsDirectory, originalName, fileValue);
       await writeFile(assetDirectory, outputName, outputData);
+      await writeFile(thumbnailDirectory, outputName, thumbnailData);
 
       metadata.push({
         fileName: outputName,
@@ -320,7 +357,7 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
       await writeFile(assetDirectory, "data.json", `${JSON.stringify(metadata, null, 2)}\n`);
 
       setStatus(
-        `Added ${outputName} to ${folderValue} as ${targetAsset.outputLabel} and copied ${originalName} into originals.`,
+        `Added ${outputName} to ${folderValue} as ${targetAsset.outputLabel}, wrote a ${THUMBNAIL_MAX_WIDTH}px thumbnail, and copied ${originalName} into originals.`,
       );
       formRef.current?.reset();
       if (fileInputRef.current) {

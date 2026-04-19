@@ -26,6 +26,15 @@ function fileBaseName(fileName) {
   return dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
 }
 
+function parseOptionalPositiveInteger(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 const server = http.createServer(async (request, response) => {
   if (!request.url) {
     writeJson(response, 400, { error: "Missing request URL." });
@@ -57,6 +66,7 @@ const server = http.createServer(async (request, response) => {
     });
     const formData = await formRequest.formData();
     const file = formData.get("file");
+    const maxWidth = parseOptionalPositiveInteger(formData.get("maxWidth"));
 
     if (!(file instanceof File)) {
       writeJson(response, 400, { error: "Expected a file upload." });
@@ -67,13 +77,22 @@ const server = http.createServer(async (request, response) => {
       ? file.name.slice(file.name.lastIndexOf(".")).toLowerCase()
       : "";
     const inputBuffer = Buffer.from(await file.arrayBuffer());
-    const outputBuffer = await sharp(inputBuffer, {
+    const transformer = sharp(inputBuffer, {
       animated: file.type === "image/gif" || extension === ".gif",
       limitInputPixels: false,
     })
-      .rotate()
+      .rotate();
+
+    if (maxWidth) {
+      transformer.resize({
+        width: maxWidth,
+        withoutEnlargement: true,
+      });
+    }
+
+    const outputBuffer = await transformer
       .webp({
-        quality: 90,
+        quality: maxWidth ? 76 : 90,
         effort: 6,
       })
       .toBuffer();

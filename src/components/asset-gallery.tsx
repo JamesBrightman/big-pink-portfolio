@@ -301,7 +301,7 @@ function MediaCard({
           className="block w-full"
         >
           <img
-            src={asset.src}
+            src={asset.thumbnailSrc ?? asset.src}
             alt={asset.name}
             loading="lazy"
             decoding="async"
