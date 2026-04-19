@@ -3,7 +3,12 @@
 /* eslint-disable @next/next/no-img-element */
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type SyntheticEvent,
+} from "react";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
@@ -285,6 +290,13 @@ type AssetGalleryProps = {
   initialPath: string[];
 };
 
+function setVideoControls(
+  event: SyntheticEvent<HTMLVideoElement>,
+  isVisible: boolean,
+) {
+  event.currentTarget.controls = isVisible;
+}
+
 function MediaCard({
   asset,
   onOpen,
@@ -314,6 +326,10 @@ function MediaCard({
           autoPlay
           loop
           muted
+          onBlur={(event) => setVideoControls(event, false)}
+          onFocus={(event) => setVideoControls(event, true)}
+          onMouseEnter={(event) => setVideoControls(event, true)}
+          onMouseLeave={(event) => setVideoControls(event, false)}
           playsInline
           preload="metadata"
           className="block h-auto w-full"
