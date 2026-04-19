@@ -1,16 +1,42 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+import Image from "next/image";
 import Link from "next/link";
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
-  type SyntheticEvent,
 } from "react";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
+
+const VIRTUAL_COLUMNS = 2;
+const VIRTUAL_GAP = 16;
+const VIRTUAL_OVERSCAN_PX = 300;
+const FALLBACK_IMAGE_WIDTH = 4;
+const FALLBACK_IMAGE_HEIGHT = 5;
+
+type ViewportSnapshot = {
+  scrollY: number;
+  viewportHeight: number;
+};
+
+type PositionedAsset = {
+  asset: AssetFile;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+};
+
+let viewportSnapshot: ViewportSnapshot = {
+  scrollY: 0,
+  viewportHeight: 0,
+};
+const viewportListeners = new Set<() => void>();
+let viewportFrameId = 0;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -29,6 +55,79 @@ function formatAssetYear(date: string) {
 
 function subscribeToHydration() {
   return () => {};
+}
+
+function publishViewportSnapshot() {
+  viewportSnapshot = {
+    scrollY: window.scrollY,
+    viewportHeight: window.innerHeight,
+  };
+  viewportListeners.forEach((listener) => listener());
+}
+
+function scheduleViewportSnapshot() {
+  if (viewportFrameId !== 0) {
+    return;
+  }
+
+  viewportFrameId = window.requestAnimationFrame(() => {
+    viewportFrameId = 0;
+    publishViewportSnapshot();
+  });
+}
+
+function subscribeToViewport(listener: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  viewportListeners.add(listener);
+
+  if (viewportListeners.size === 1) {
+    publishViewportSnapshot();
+    window.addEventListener("scroll", scheduleViewportSnapshot, {
+      passive: true,
+    });
+    window.addEventListener("resize", scheduleViewportSnapshot);
+  }
+
+  return () => {
+    viewportListeners.delete(listener);
+
+    if (viewportListeners.size === 0) {
+      window.removeEventListener("scroll", scheduleViewportSnapshot);
+      window.removeEventListener("resize", scheduleViewportSnapshot);
+
+      if (viewportFrameId !== 0) {
+        window.cancelAnimationFrame(viewportFrameId);
+        viewportFrameId = 0;
+      }
+    }
+  };
+}
+
+function getViewportSnapshot() {
+  return viewportSnapshot;
+}
+
+function getViewportServerSnapshot(): ViewportSnapshot {
+  return {
+    scrollY: 0,
+    viewportHeight: 0,
+  };
+}
+
+function getAssetDimensions(asset: AssetFile) {
+  return {
+    width: asset.width ?? FALLBACK_IMAGE_WIDTH,
+    height: asset.height ?? FALLBACK_IMAGE_HEIGHT,
+  };
+}
+
+function getAssetCardHeight(asset: AssetFile, cardWidth: number) {
+  const { width, height } = getAssetDimensions(asset);
+
+  return Math.max(180, Math.round((cardWidth * height) / width));
 }
 
 function HomeIcon() {
@@ -109,7 +208,7 @@ function FolderDropdownList({
       <Link
         href={folderPathHref(pathSegments)}
         onClick={onNavigate}
-        className={`block whitespace-nowrap px-3 py-2 text-sm font-medium uppercase tracking-[0.01em] transition text-left ${
+        className={`block whitespace-nowrap px-3 py-2 text-left text-sm font-medium uppercase tracking-[0.01em] transition ${
           isActive ? "italic text-white" : "text-white/80 hover:text-white"
         } ${depth > 0 ? "pl-6" : ""}`}
       >
@@ -286,100 +385,194 @@ function MobileNav({
   );
 }
 
-type AssetGalleryProps = {
-  tree: AssetFolder;
-  initialPath: string[];
-};
-
-function setVideoControls(
-  event: SyntheticEvent<HTMLVideoElement>,
-  isVisible: boolean,
-) {
-  event.currentTarget.controls = isVisible;
-}
-
-function attemptVideoAutoplay(video: HTMLVideoElement | null) {
-  if (!video) {
-    return;
-  }
-
-  video.muted = true;
-
-  const playAttempt = video.play();
-
-  if (playAttempt && typeof playAttempt.catch === "function") {
-    playAttempt.catch(() => {});
-  }
-}
-
 function MediaCard({
-  asset,
+  position,
   onOpen,
 }: {
-  asset: AssetFile;
+  position: PositionedAsset;
   onOpen: (asset: AssetFile) => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    if (asset.kind !== "video") {
-      return;
-    }
-
-    attemptVideoAutoplay(videoRef.current);
-  }, [asset.kind, asset.src]);
+  const { asset, top, left, width, height } = position;
+  const dimensions = getAssetDimensions(asset);
 
   return (
-    <div className="group relative overflow-hidden rounded-[18px] border border-white/55 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-      {asset.kind === "image" ? (
+    <div
+      className="absolute"
+      style={{
+        top,
+        left,
+        width,
+        height,
+      }}
+    >
+      <div className="group relative h-full overflow-hidden rounded-[18px] border border-white/55 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
         <button
           type="button"
           onClick={() => onOpen(asset)}
-          className="block w-full"
+          className="block h-full w-full"
         >
-          <img
+          <Image
             src={asset.thumbnailSrc ?? asset.src}
             alt={asset.name}
-            loading="lazy"
-            decoding="async"
-            className="block h-auto w-full"
+            unoptimized
+            width={dimensions.width}
+            height={dimensions.height}
+            sizes="50vw"
+            className="h-full w-full object-cover"
           />
         </button>
-      ) : (
-        <video
-          ref={videoRef}
-          src={asset.src}
-          autoPlay
-          loop
-          muted
-          onBlur={(event) => setVideoControls(event, false)}
-          onCanPlay={() => attemptVideoAutoplay(videoRef.current)}
-          onFocus={(event) => setVideoControls(event, true)}
-          onLoadedMetadata={() => attemptVideoAutoplay(videoRef.current)}
-          onMouseEnter={(event) => setVideoControls(event, true)}
-          onMouseLeave={(event) => setVideoControls(event, false)}
-          playsInline
-          preload="metadata"
-          className="block h-auto w-full"
-        />
-      )}
 
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
-        <div className="max-w-[80%] text-center text-white">
-          <p className="text-sm font-semibold tracking-tight">
-            {new Intl.DateTimeFormat("en-GB", {
-              year: "numeric",
-              timeZone: "UTC",
-            }).format(new Date(`${asset.date}T00:00:00Z`))}
-          </p>
-          <p className="mt-1 text-sm leading-5 text-white/90">
-            {asset.description}
-          </p>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
+          <div className="max-w-[80%] text-center text-white">
+            <p className="text-sm font-semibold tracking-tight">
+              {formatAssetYear(asset.date)}
+            </p>
+            <p className="mt-1 text-sm leading-5 text-white/90">
+              {asset.description}
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+function VirtualizedImageGrid({
+  assets,
+  onOpen,
+}: {
+  assets: AssetFile[];
+  onOpen: (asset: AssetFile) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const viewport = useSyncExternalStore(
+    subscribeToViewport,
+    getViewportSnapshot,
+    getViewportServerSnapshot,
+  );
+  const [containerMetrics, setContainerMetrics] = useState({
+    width: 0,
+    top: 0,
+  });
+
+  useEffect(() => {
+    const node = containerRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const updateMetrics = () => {
+      const rect = node.getBoundingClientRect();
+      const nextMetrics = {
+        width: Math.max(0, Math.floor(rect.width)),
+        top: Math.round(rect.top + window.scrollY),
+      };
+
+      setContainerMetrics((current) => {
+        if (
+          current.width === nextMetrics.width &&
+          current.top === nextMetrics.top
+        ) {
+          return current;
+        }
+
+        return nextMetrics;
+      });
+    };
+
+    updateMetrics();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateMetrics();
+    });
+
+    resizeObserver.observe(node);
+    window.addEventListener("resize", updateMetrics);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateMetrics);
+    };
+  }, []);
+
+  const layout = useMemo(() => {
+    if (containerMetrics.width <= 0) {
+      return {
+        positions: [] as PositionedAsset[],
+        totalHeight: 0,
+      };
+    }
+
+    const cardWidth =
+      (containerMetrics.width - VIRTUAL_GAP) / VIRTUAL_COLUMNS;
+    const columnHeights = Array(VIRTUAL_COLUMNS).fill(0);
+    const positions = assets.map((asset) => {
+      const columnIndex = columnHeights[0] <= columnHeights[1] ? 0 : 1;
+      const height = getAssetCardHeight(asset, cardWidth);
+      const position = {
+        asset,
+        top: columnHeights[columnIndex],
+        left: columnIndex * (cardWidth + VIRTUAL_GAP),
+        width: cardWidth,
+        height,
+      };
+
+      columnHeights[columnIndex] += height + VIRTUAL_GAP;
+
+      return position;
+    });
+
+    return {
+      positions,
+      totalHeight: Math.max(0, Math.max(...columnHeights) - VIRTUAL_GAP),
+    };
+  }, [assets, containerMetrics.width]);
+
+  const visibleTop = Math.max(
+    0,
+    viewport.scrollY - containerMetrics.top - VIRTUAL_OVERSCAN_PX,
+  );
+  const visibleBottom =
+    viewport.scrollY +
+    viewport.viewportHeight -
+    containerMetrics.top +
+    VIRTUAL_OVERSCAN_PX;
+
+  const visiblePositions = useMemo(
+    () =>
+      layout.positions.filter(
+        (position) =>
+          position.top + position.height >= visibleTop &&
+          position.top <= visibleBottom,
+      ),
+    [layout.positions, visibleBottom, visibleTop],
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full"
+      style={{
+        minHeight: layout.totalHeight || 640,
+        height: layout.totalHeight || undefined,
+      }}
+    >
+      {visiblePositions.map((position) => (
+        <MediaCard
+          key={`${position.asset.src}-${position.asset.name}`}
+          position={position}
+          onOpen={onOpen}
+        />
+      ))}
+    </div>
+  );
+}
+
+type AssetGalleryProps = {
+  tree: AssetFolder;
+  initialPath: string[];
+};
 
 export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const hasMounted = useSyncExternalStore(
@@ -405,7 +598,9 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     activeFolder = next;
   }
 
-  const cards = collectFiles(activeFolder);
+  const cards = collectFiles(activeFolder).filter(
+    (asset) => asset.kind === "image",
+  );
 
   useEffect(() => {
     if (!selectedAsset && !isMobileNavOpen) {
@@ -504,42 +699,17 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
       {cards.length > 0 ? (
         hasMounted ? (
-          <ResponsiveMasonry
-            columnsCountBreakPoints={{
-              0: 2,
-              640: 2,
-              1024: 4,
-              1280: 6,
-            }}
-          >
-            <Masonry gutter="16px">
-              {cards.map((asset) => (
-                <MediaCard
-                  key={`${asset.src}-${asset.name}`}
-                  asset={asset}
-                  onOpen={setSelectedAsset}
-                />
-              ))}
-            </Masonry>
-          </ResponsiveMasonry>
+          <VirtualizedImageGrid assets={cards} onOpen={setSelectedAsset} />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-            {cards.map((asset) => (
-              <MediaCard
-                key={`${asset.src}-${asset.name}`}
-                asset={asset}
-                onOpen={setSelectedAsset}
-              />
-            ))}
-          </div>
+          <div className="min-h-[60vh]" />
         )
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-[#d8e1ec] bg-white p-10 text-center">
           <p className="text-lg font-medium text-[#121826]">
-            No media in this folder yet.
+            No images in this folder yet.
           </p>
           <p className="mt-2 text-sm leading-6 text-[#5c6675]">
-            Add images or videos to{" "}
+            Add images to{" "}
             <span className="font-medium text-[#2f6bed]">public/assets</span>{" "}
             and they will appear here automatically.
           </p>
