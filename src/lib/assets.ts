@@ -23,6 +23,7 @@ export type AssetMetadataItem = {
 export type AssetFile = {
   name: string;
   src: string;
+  thumbnailSrc?: string;
   kind: AssetKind;
   description: string;
   date: string;
@@ -38,6 +39,7 @@ export type AssetFolder = {
 };
 
 const ASSET_ROOT = path.join(process.cwd(), "public", "assets");
+const THUMBNAIL_ROOT = path.join(process.cwd(), "public", "assets-thumbs");
 const PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const MEDIA_EXTENSIONS = new Set([
   ".avif",
@@ -58,6 +60,33 @@ type AssetDimensions = {
 
 function toPublicSrc(filePath: string) {
   return filePath.split(path.sep).join("/");
+}
+
+function fileBaseName(fileName: string) {
+  const dotIndex = fileName.lastIndexOf(".");
+
+  return dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+}
+
+function getAssetPublicSrc(relativeSegments: string[], fileName: string) {
+  return `${PUBLIC_BASE_PATH}/${toPublicSrc(
+    path.join("assets", ...relativeSegments, fileName),
+  )}`;
+}
+
+function getThumbnailPublicSrc(relativeSegments: string[], fileName: string) {
+  return `${PUBLIC_BASE_PATH}/${toPublicSrc(
+    path.join("assets-thumbs", ...relativeSegments, `${fileBaseName(fileName)}.webp`),
+  )}`;
+}
+
+async function hasFile(filePath: string) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function getKind(extension: string): AssetKind | null {
@@ -185,7 +214,18 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
 
     files.push({
       name: entry.name,
-      src: `${PUBLIC_BASE_PATH}/${toPublicSrc(path.join("assets", ...relativeSegments, entry.name))}`,
+      src: getAssetPublicSrc(relativeSegments, entry.name),
+      thumbnailSrc:
+        kind === "image" &&
+        (await hasFile(
+          path.join(
+            THUMBNAIL_ROOT,
+            ...relativeSegments,
+            `${fileBaseName(entry.name)}.webp`,
+          ),
+        ))
+          ? getThumbnailPublicSrc(relativeSegments, entry.name)
+          : getAssetPublicSrc(relativeSegments, entry.name),
       kind,
       ...metadata,
       ...(kind === "image" ? await readImageDimensions(nextPath) : null),
