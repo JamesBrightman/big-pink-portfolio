@@ -5,6 +5,7 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Link from "next/link";
 import {
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type SyntheticEvent,
@@ -297,6 +298,20 @@ function setVideoControls(
   event.currentTarget.controls = isVisible;
 }
 
+function attemptVideoAutoplay(video: HTMLVideoElement | null) {
+  if (!video) {
+    return;
+  }
+
+  video.muted = true;
+
+  const playAttempt = video.play();
+
+  if (playAttempt && typeof playAttempt.catch === "function") {
+    playAttempt.catch(() => {});
+  }
+}
+
 function MediaCard({
   asset,
   onOpen,
@@ -304,6 +319,16 @@ function MediaCard({
   asset: AssetFile;
   onOpen: (asset: AssetFile) => void;
 }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (asset.kind !== "video") {
+      return;
+    }
+
+    attemptVideoAutoplay(videoRef.current);
+  }, [asset.kind, asset.src]);
+
   return (
     <div className="group relative overflow-hidden rounded-[18px] border border-white/55 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
       {asset.kind === "image" ? (
@@ -322,12 +347,15 @@ function MediaCard({
         </button>
       ) : (
         <video
+          ref={videoRef}
           src={asset.src}
           autoPlay
           loop
           muted
           onBlur={(event) => setVideoControls(event, false)}
+          onCanPlay={() => attemptVideoAutoplay(videoRef.current)}
           onFocus={(event) => setVideoControls(event, true)}
+          onLoadedMetadata={() => attemptVideoAutoplay(videoRef.current)}
           onMouseEnter={(event) => setVideoControls(event, true)}
           onMouseLeave={(event) => setVideoControls(event, false)}
           playsInline
