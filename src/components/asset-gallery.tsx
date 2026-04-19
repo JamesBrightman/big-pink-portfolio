@@ -428,7 +428,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }, []);
 
   return (
-    <section className="flex min-h-screen w-full flex-col px-4 py-5">
+    <section className="flex w-full flex-col px-4 py-5">
       <header
         className={`sticky z-30 mb-4 bg-transparent transition-[top,opacity] duration-300 ${
           isHeaderVisible || isMobileNavOpen

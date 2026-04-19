@@ -9,7 +9,7 @@ export async function PortfolioPage({ initialPath }: PortfolioPageProps) {
   const tree = await getAssetTree();
 
   return (
-    <main className="min-h-screen bg-transparent text-white">
+    <main className="bg-transparent text-white">
       <AssetGallery tree={tree} initialPath={initialPath} />
     </main>
   );
