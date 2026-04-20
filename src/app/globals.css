@@ -58,22 +58,19 @@ select {
 
 .site-footer {
   position: fixed;
-  right: 0;
   bottom: 0;
-  left: 0;
-  z-index: 40;
+  left: 50%;
+  z-index: 60;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transform: translateY(calc(100% + 0.5rem));
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+  transform: translateX(-50%);
 }
 
 body[data-gallery-at-bottom="true"] .site-footer {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
-  transform: translateY(0);
 }
 
 .expanded-asset-scroll {
@@ -100,7 +97,3 @@ body[data-gallery-at-bottom="true"] .site-footer {
   background-clip: padding-box;
 }
 
-.masonry-scroll-shell .ReactVirtualized__Masonry__innerScrollContainer {
-  box-sizing: content-box;
-  padding-bottom: 68px;
-}

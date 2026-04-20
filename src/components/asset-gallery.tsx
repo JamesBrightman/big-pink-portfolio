@@ -671,7 +671,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }, []);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col px-4 py-5">
+    <section className="flex min-h-0 flex-1 flex-col px-4 pt-5">
       <header className="relative z-50 mb-1 bg-transparent">
         <div className="overflow-hidden lg:overflow-visible">
           <nav className="flex items-center justify-between bg-transparent px-0 pb-2">
