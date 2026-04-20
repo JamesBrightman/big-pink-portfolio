@@ -129,7 +129,10 @@ function getAssetHeight(asset: AssetFile, columnWidth: number) {
     typeof asset.height === "number" &&
     asset.width > 0
   ) {
-    return Math.max(180, Math.round((asset.height / asset.width) * columnWidth));
+    return Math.max(
+      180,
+      Math.round((asset.height / asset.width) * columnWidth),
+    );
   }
 
   return 220;
@@ -369,16 +372,13 @@ function MasonryMediaCard({
   asset: AssetFile;
   onOpen: (asset: AssetFile) => void;
 }) {
-  const setVideoRef = useCallback(
-    (video: HTMLVideoElement | null) => {
-      if (!video) {
-        return;
-      }
+  const setVideoRef = useCallback((video: HTMLVideoElement | null) => {
+    if (!video) {
+      return;
+    }
 
-      attemptVideoAutoplay(video);
-    },
-    [],
-  );
+    attemptVideoAutoplay(video);
+  }, []);
   const handleVideoReady = useCallback(
     (event: SyntheticEvent<HTMLVideoElement>) => {
       attemptVideoAutoplay(event.currentTarget);
@@ -393,7 +393,10 @@ function MasonryMediaCard({
       className="group relative box-border block w-full appearance-none overflow-hidden rounded-[18px] border border-white/55 bg-white p-0 text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
     >
       {asset.kind === "video" ? (
-        <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: "9 / 16" }}>
+        <div
+          className="relative w-full overflow-hidden bg-black"
+          style={{ aspectRatio: "9 / 16" }}
+        >
           <video
             ref={setVideoRef}
             src={asset.src}
@@ -459,7 +462,10 @@ function VirtualizedMasonryContent({
     () => Math.max(0, width - MASONRY_EDGE_PADDING * 2),
     [width],
   );
-  const columnCount = useMemo(() => getColumnCount(contentWidth), [contentWidth]);
+  const columnCount = useMemo(
+    () => getColumnCount(contentWidth),
+    [contentWidth],
+  );
   const columnWidth = useMemo(
     () => getColumnWidth(contentWidth, columnCount),
     [columnCount, contentWidth],
@@ -495,12 +501,7 @@ function VirtualizedMasonryContent({
       }
 
       return (
-        <CellMeasurer
-          cache={cache}
-          index={index}
-          key={key}
-          parent={parent}
-        >
+        <CellMeasurer cache={cache} index={index} key={key} parent={parent}>
           {({ registerChild }) => (
             <div
               ref={registerChild}
@@ -580,8 +581,7 @@ function VirtualizedMasonryGrid({
         </AutoSizer>
       </div>
       <style jsx global>{`
-        .masonry-scroll-shell
-          .ReactVirtualized__Masonry__innerScrollContainer {
+        .masonry-scroll-shell .ReactVirtualized__Masonry__innerScrollContainer {
           box-sizing: border-box;
           width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
           max-width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
@@ -619,10 +619,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     activeFolder = next;
   }
 
-  const assets = useMemo(
-    () => collectFiles(activeFolder),
-    [activeFolder],
-  );
+  const assets = useMemo(() => collectFiles(activeFolder), [activeFolder]);
   const syncFooterVisibility = useCallback(
     ({
       clientHeight,
@@ -675,9 +672,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     <section className="flex min-h-0 flex-1 flex-col px-4 py-5">
       <header className="relative z-50 mb-4 bg-transparent">
         <div className="overflow-hidden lg:overflow-visible">
-          <nav
-            className="flex items-center justify-between bg-transparent px-0 py-4"
-          >
+          <nav className="flex items-center justify-between bg-transparent px-0 py-4">
             <Link
               href="/"
               aria-label="Home"
@@ -724,41 +719,45 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
       {selectedAsset ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-2 py-0 sm:p-4"
           onClick={() => setSelectedAsset(null)}
         >
           <div
-            className="expanded-asset-scroll flex max-h-[95vh] max-w-[95vw] flex-col items-center overflow-y-auto pr-3"
+            className="flex max-h-dvh w-full max-w-full flex-col items-center overflow-y-auto sm:max-h-[calc(100dvh-2rem)] sm:w-auto sm:max-w-[calc(100vw-2rem)] sm:pr-3"
             onClick={(event) => event.stopPropagation()}
           >
-            {selectedAsset.kind === "video" ? (
-              <video
-                ref={attemptVideoAutoplay}
-                src={selectedAsset.src}
-                poster={selectedAsset.thumbnailSrc}
-                autoPlay
-                controls
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                onCanPlay={(event) => attemptVideoAutoplay(event.currentTarget)}
-                onLoadedData={(event) =>
-                  attemptVideoAutoplay(event.currentTarget)
-                }
-                onLoadedMetadata={(event) =>
-                  attemptVideoAutoplay(event.currentTarget)
-                }
-                className="max-h-[82vh] max-w-[95vw] rounded-[18px]"
-              />
-            ) : (
-              <img
-                src={selectedAsset.src}
-                alt={selectedAsset.name}
-                decoding="async"
-                className="max-h-[82vh] max-w-[95vw] rounded-[18px] object-contain"
-              />
-            )}
+            <div className="flex min-h-0 w-full items-center justify-center sm:w-auto">
+              {selectedAsset.kind === "video" ? (
+                <video
+                  ref={attemptVideoAutoplay}
+                  src={selectedAsset.src}
+                  poster={selectedAsset.thumbnailSrc}
+                  autoPlay
+                  controls
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onCanPlay={(event) =>
+                    attemptVideoAutoplay(event.currentTarget)
+                  }
+                  onLoadedData={(event) =>
+                    attemptVideoAutoplay(event.currentTarget)
+                  }
+                  onLoadedMetadata={(event) =>
+                    attemptVideoAutoplay(event.currentTarget)
+                  }
+                  className="max-h-[calc(100dvh-6.5rem)] max-w-full rounded-[18px] object-contain sm:max-h-[calc(100dvh-2rem)] sm:max-w-[calc(100vw-2rem)]"
+                />
+              ) : (
+                <img
+                  src={selectedAsset.src}
+                  alt={selectedAsset.name}
+                  decoding="async"
+                  className="max-h-[calc(100dvh-6.5rem)] max-w-full rounded-[18px] object-contain sm:max-h-[calc(100dvh-2rem)] sm:max-w-[calc(100vw-2rem)]"
+                />
+              )}
+            </div>
 
             <div className="mt-4 w-full text-center text-white lg:hidden">
               <p className="text-sm font-semibold tracking-tight">
