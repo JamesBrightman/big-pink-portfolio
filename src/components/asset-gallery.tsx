@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import {
+  type SyntheticEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -22,6 +23,7 @@ const MASONRY_GUTTER = 16;
 const MASONRY_OVERSCAN_PX = 320;
 const MASONRY_EDGE_PADDING = 16;
 const FOOTER_REVEAL_THRESHOLD = 8;
+const VIDEO_ASPECT_RATIO = 9 / 16;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -118,6 +120,10 @@ function getColumnCount(width: number) {
 }
 
 function getAssetHeight(asset: AssetFile, columnWidth: number) {
+  if (asset.kind === "video") {
+    return Math.max(220, Math.round(columnWidth / VIDEO_ASPECT_RATIO));
+  }
+
   if (
     typeof asset.width === "number" &&
     typeof asset.height === "number" &&
@@ -131,6 +137,22 @@ function getAssetHeight(asset: AssetFile, columnWidth: number) {
 
 function getAssetKey(asset: AssetFile, index: number) {
   return `${asset.src}::${index}`;
+}
+
+function attemptVideoAutoplay(video: HTMLVideoElement | null) {
+  if (!video) {
+    return;
+  }
+
+  video.muted = true;
+  video.playsInline = true;
+  video.loop = true;
+
+  const playback = video.play();
+
+  if (playback && typeof playback.catch === "function") {
+    playback.catch(() => {});
+  }
 }
 
 type NavFolderItemProps = {
@@ -340,28 +362,64 @@ function MobileNav({
   );
 }
 
-function MasonryImageCard({
+function MasonryMediaCard({
   asset,
   onOpen,
 }: {
   asset: AssetFile;
   onOpen: (asset: AssetFile) => void;
 }) {
+  const setVideoRef = useCallback(
+    (video: HTMLVideoElement | null) => {
+      if (!video) {
+        return;
+      }
+
+      attemptVideoAutoplay(video);
+    },
+    [],
+  );
+  const handleVideoReady = useCallback(
+    (event: SyntheticEvent<HTMLVideoElement>) => {
+      attemptVideoAutoplay(event.currentTarget);
+    },
+    [],
+  );
+
   return (
     <button
       type="button"
       onClick={() => onOpen(asset)}
       className="group relative box-border block w-full appearance-none overflow-hidden rounded-[18px] border border-white/55 bg-white p-0 text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
     >
-      <img
-        src={asset.thumbnailSrc ?? asset.src}
-        alt={asset.name}
-        loading="lazy"
-        decoding="async"
-        width={asset.width}
-        height={asset.height}
-        className="block h-auto w-full"
-      />
+      {asset.kind === "video" ? (
+        <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: "9 / 16" }}>
+          <video
+            ref={setVideoRef}
+            src={asset.src}
+            poster={asset.thumbnailSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            onCanPlay={handleVideoReady}
+            onLoadedData={handleVideoReady}
+            onLoadedMetadata={handleVideoReady}
+            className="absolute inset-0 block h-full w-full object-contain bg-black"
+          />
+        </div>
+      ) : (
+        <img
+          src={asset.thumbnailSrc ?? asset.src}
+          alt={asset.name}
+          loading="lazy"
+          decoding="async"
+          width={asset.width}
+          height={asset.height}
+          className="block h-auto w-full"
+        />
+      )}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
         <div className="max-w-[80%] text-center text-white">
           <p className="text-sm font-semibold tracking-tight">
@@ -457,7 +515,7 @@ function VirtualizedMasonryContent({
                   width: "100%",
                 }}
               >
-                <MasonryImageCard asset={asset} onOpen={onOpen} />
+                <MasonryMediaCard asset={asset} onOpen={onOpen} />
               </div>
             </div>
           )}
@@ -562,7 +620,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }
 
   const assets = useMemo(
-    () => collectFiles(activeFolder).filter((asset) => asset.kind === "image"),
+    () => collectFiles(activeFolder),
     [activeFolder],
   );
   const syncFooterVisibility = useCallback(
@@ -673,12 +731,34 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
             className="expanded-asset-scroll flex max-h-[95vh] max-w-[95vw] flex-col items-center overflow-y-auto pr-3"
             onClick={(event) => event.stopPropagation()}
           >
-            <img
-              src={selectedAsset.src}
-              alt={selectedAsset.name}
-              decoding="async"
-              className="max-h-[82vh] max-w-[95vw] rounded-[18px] object-contain"
-            />
+            {selectedAsset.kind === "video" ? (
+              <video
+                ref={attemptVideoAutoplay}
+                src={selectedAsset.src}
+                poster={selectedAsset.thumbnailSrc}
+                autoPlay
+                controls
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                onCanPlay={(event) => attemptVideoAutoplay(event.currentTarget)}
+                onLoadedData={(event) =>
+                  attemptVideoAutoplay(event.currentTarget)
+                }
+                onLoadedMetadata={(event) =>
+                  attemptVideoAutoplay(event.currentTarget)
+                }
+                className="max-h-[82vh] max-w-[95vw] rounded-[18px]"
+              />
+            ) : (
+              <img
+                src={selectedAsset.src}
+                alt={selectedAsset.name}
+                decoding="async"
+                className="max-h-[82vh] max-w-[95vw] rounded-[18px] object-contain"
+              />
+            )}
 
             <div className="mt-4 w-full text-center text-white lg:hidden">
               <p className="text-sm font-semibold tracking-tight">

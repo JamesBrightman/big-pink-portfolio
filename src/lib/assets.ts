@@ -311,9 +311,9 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
       ...relativeSegments,
       `${fileBaseName(entry.name)}.webp`,
     );
-    const hasThumbnail = kind === "image" && (await hasFile(thumbnailFilePath));
+    const hasThumbnail = await hasFile(thumbnailFilePath);
     const displayedDimensions =
-      kind === "image"
+      hasThumbnail || kind === "image"
         ? await readImageDimensions(hasThumbnail ? thumbnailFilePath : nextPath)
         : null;
 
@@ -323,7 +323,9 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
       thumbnailSrc:
         hasThumbnail
           ? getThumbnailPublicSrc(relativeSegments, entry.name)
-          : getAssetPublicSrc(relativeSegments, entry.name),
+          : kind === "image"
+            ? getAssetPublicSrc(relativeSegments, entry.name)
+            : undefined,
       kind,
       ...metadata,
       ...(displayedDimensions ?? null),
