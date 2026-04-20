@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { z } from "zod";
 
@@ -41,6 +42,7 @@ export type AssetFolder = {
 const ASSET_ROOT = path.join(process.cwd(), "public", "assets");
 const THUMBNAIL_ROOT = path.join(process.cwd(), "public", "assets-thumbs");
 const PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const ffprobePackageRoot = path.join(process.cwd(), "node_modules", "ffprobe-static");
 const MEDIA_EXTENSIONS = new Set([
   ".avif",
   ".gif",
@@ -277,6 +279,86 @@ async function readImageDimensions(filePath: string): Promise<AssetDimensions | 
   return null;
 }
 
+async function readVideoDimensions(
+  filePath: string,
+): Promise<AssetDimensions | null> {
+  const ffprobePath = path.join(
+    ffprobePackageRoot,
+    "bin",
+    process.platform,
+    process.arch,
+    process.platform === "win32" ? "ffprobe.exe" : "ffprobe",
+  );
+
+  if (!(await hasFile(ffprobePath))) {
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      ffprobePath,
+      [
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=width,height",
+        "-of",
+        "json",
+        filePath,
+      ],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+      },
+    );
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`ffprobe exited with code ${code}: ${stderr}`));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(stdout) as {
+          streams?: Array<{ width?: number; height?: number }>;
+        };
+        const stream = parsed.streams?.[0];
+
+        if (
+          typeof stream?.width === "number" &&
+          typeof stream?.height === "number" &&
+          stream.width > 0 &&
+          stream.height > 0
+        ) {
+          resolve({
+            width: stream.width,
+            height: stream.height,
+          });
+          return;
+        }
+
+        resolve(null);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
 async function readFolder(folderPath: string, relativeSegments: string[]): Promise<AssetFolder> {
   const entries = await fs.readdir(folderPath, { withFileTypes: true });
   const folders: AssetFolder[] = [];
@@ -298,6 +380,14 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
       continue;
     }
 
+    if (
+      kind === "image" &&
+      extension !== ".webp" &&
+      (await hasFile(path.join(folderPath, `${fileBaseName(entry.name)}.webp`)))
+    ) {
+      continue;
+    }
+
     const metadata = metadataMap.get(entry.name);
 
     if (!metadata) {
@@ -313,9 +403,11 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
     );
     const hasThumbnail = await hasFile(thumbnailFilePath);
     const displayedDimensions =
-      hasThumbnail || kind === "image"
-        ? await readImageDimensions(hasThumbnail ? thumbnailFilePath : nextPath)
-        : null;
+      kind === "video"
+        ? await readVideoDimensions(nextPath)
+        : hasThumbnail || kind === "image"
+          ? await readImageDimensions(hasThumbnail ? thumbnailFilePath : nextPath)
+          : null;
 
     files.push({
       name: entry.name,

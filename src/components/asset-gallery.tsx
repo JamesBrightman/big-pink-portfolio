@@ -23,7 +23,6 @@ const MASONRY_GUTTER = 16;
 const MASONRY_OVERSCAN_PX = 320;
 const MASONRY_EDGE_PADDING = 16;
 const FOOTER_REVEAL_THRESHOLD = 8;
-const VIDEO_ASPECT_RATIO = 9 / 16;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -120,10 +119,6 @@ function getColumnCount(width: number) {
 }
 
 function getAssetHeight(asset: AssetFile, columnWidth: number) {
-  if (asset.kind === "video") {
-    return Math.max(220, Math.round(columnWidth / VIDEO_ASPECT_RATIO));
-  }
-
   if (
     typeof asset.width === "number" &&
     typeof asset.height === "number" &&
@@ -372,6 +367,13 @@ function MasonryMediaCard({
   asset: AssetFile;
   onOpen: (asset: AssetFile) => void;
 }) {
+  const videoAspectRatio =
+    typeof asset.width === "number" &&
+    typeof asset.height === "number" &&
+    asset.width > 0 &&
+    asset.height > 0
+      ? `${asset.width} / ${asset.height}`
+      : "9 / 16";
   const setVideoRef = useCallback((video: HTMLVideoElement | null) => {
     if (!video) {
       return;
@@ -395,7 +397,7 @@ function MasonryMediaCard({
       {asset.kind === "video" ? (
         <div
           className="relative w-full overflow-hidden bg-black"
-          style={{ aspectRatio: "9 / 16" }}
+          style={{ aspectRatio: videoAspectRatio }}
         >
           <video
             ref={setVideoRef}
