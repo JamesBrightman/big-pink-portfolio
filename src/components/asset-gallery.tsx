@@ -5,7 +5,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -22,6 +21,7 @@ import type { AssetFile, AssetFolder } from "@/lib/assets";
 const MASONRY_GUTTER = 16;
 const MASONRY_OVERSCAN_PX = 320;
 const MASONRY_EDGE_PADDING = 16;
+const FOOTER_REVEAL_THRESHOLD = 8;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -380,30 +380,31 @@ function VirtualizedMasonryContent({
   assets,
   height,
   onOpen,
-  onScrollChange,
+  onScrollStateChange,
   width,
 }: {
   assets: AssetFile[];
   height: number;
   onOpen: (asset: AssetFile) => void;
-  onScrollChange: (scrollTop: number) => void;
+  onScrollStateChange: (state: {
+    clientHeight: number;
+    scrollHeight: number;
+    scrollTop: number;
+  }) => void;
   width: number;
 }) {
   const assetKeys = useMemo(
     () => assets.map((asset, index) => getAssetKey(asset, index)),
     [assets],
   );
-  const availableWidth = useMemo(
+  const contentWidth = useMemo(
     () => Math.max(0, width - MASONRY_EDGE_PADDING * 2),
     [width],
   );
-  const columnCount = useMemo(
-    () => getColumnCount(availableWidth),
-    [availableWidth],
-  );
+  const columnCount = useMemo(() => getColumnCount(contentWidth), [contentWidth]);
   const columnWidth = useMemo(
-    () => getColumnWidth(availableWidth, columnCount),
-    [availableWidth, columnCount],
+    () => getColumnWidth(contentWidth, columnCount),
+    [columnCount, contentWidth],
   );
   const cache = useMemo(
     () =>
@@ -469,15 +470,20 @@ function VirtualizedMasonryContent({
   return (
     <Masonry
       autoHeight={false}
-      key={`${width}-${availableWidth}-${columnCount}-${columnWidth}`}
+      className="masonry-scroll-shell"
+      key={`${width}-${contentWidth}-${columnCount}-${columnWidth}`}
       cellCount={assets.length}
       cellMeasurerCache={cache}
       cellPositioner={positioner}
       cellRenderer={cellRenderer}
       height={height}
       keyMapper={(index) => assetKeys[index] ?? `asset-${index}`}
-      onScroll={({ scrollTop }) => onScrollChange(scrollTop)}
+      onScroll={onScrollStateChange}
       overscanByPixels={MASONRY_OVERSCAN_PX}
+      style={{
+        boxSizing: "border-box",
+        scrollbarGutter: "stable",
+      }}
       width={width}
     />
   );
@@ -486,30 +492,45 @@ function VirtualizedMasonryContent({
 function VirtualizedMasonryGrid({
   assets,
   onOpen,
-  onScrollChange,
+  onScrollStateChange,
 }: {
   assets: AssetFile[];
   onOpen: (asset: AssetFile) => void;
-  onScrollChange: (scrollTop: number) => void;
+  onScrollStateChange: (state: {
+    clientHeight: number;
+    scrollHeight: number;
+    scrollTop: number;
+  }) => void;
 }) {
   return (
-    <div className="min-h-0 flex-1 px-4">
-      <AutoSizer>
-        {({ height, width }) =>
-          width > 0 && height > 0 ? (
-            <VirtualizedMasonryContent
-              assets={assets}
-              height={height}
-              onOpen={onOpen}
-              onScrollChange={onScrollChange}
-              width={width}
-            />
-          ) : (
-            <div className="min-h-[60vh]" />
-          )
+    <>
+      <div className="-mx-4 min-h-0 flex-1 w-[calc(100%+2rem)]">
+        <AutoSizer>
+          {({ height, width }) =>
+            width > 0 && height > 0 ? (
+              <VirtualizedMasonryContent
+                assets={assets}
+                height={height}
+                onOpen={onOpen}
+                onScrollStateChange={onScrollStateChange}
+                width={width}
+              />
+            ) : (
+              <div className="min-h-[60vh]" />
+            )
+          }
+        </AutoSizer>
+      </div>
+      <style jsx global>{`
+        .masonry-scroll-shell
+          .ReactVirtualized__Masonry__innerScrollContainer {
+          box-sizing: border-box;
+          width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
+          max-width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
+          margin-left: ${MASONRY_EDGE_PADDING}px;
         }
-      </AutoSizer>
-    </div>
+      `}</style>
+    </>
   );
 }
 
@@ -526,9 +547,6 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   );
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetFile | null>(null);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [hasScrolledDown, setHasScrolledDown] = useState(false);
-  const lastScrollTopRef = useRef(0);
   const activePath = initialPath;
   let activeFolder = tree;
 
@@ -546,6 +564,24 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const assets = useMemo(
     () => collectFiles(activeFolder).filter((asset) => asset.kind === "image"),
     [activeFolder],
+  );
+  const syncFooterVisibility = useCallback(
+    ({
+      clientHeight,
+      scrollHeight,
+      scrollTop,
+    }: {
+      clientHeight: number;
+      scrollHeight: number;
+      scrollTop: number;
+    }) => {
+      const isAtBottom =
+        scrollHeight <= clientHeight ||
+        scrollTop + clientHeight >= scrollHeight - FOOTER_REVEAL_THRESHOLD;
+
+      document.body.dataset.galleryAtBottom = isAtBottom ? "true" : "false";
+    },
+    [],
   );
 
   useEffect(() => {
@@ -569,48 +605,20 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     };
   }, [isMobileNavOpen, selectedAsset]);
 
-  const handleMasonryScroll = useCallback(
-    (scrollTop: number) => {
-      if (isMobileNavOpen) {
-        return;
-      }
+  useEffect(() => {
+    document.body.dataset.galleryAtBottom = "false";
 
-      const lastScrollTop = lastScrollTopRef.current;
-      const isNearTop = scrollTop <= 24;
-
-      setHasScrolledDown(!isNearTop);
-
-      if (isNearTop) {
-        setIsHeaderVisible(true);
-      } else if (scrollTop < lastScrollTop) {
-        setIsHeaderVisible(true);
-      } else if (scrollTop > lastScrollTop) {
-        setIsHeaderVisible(false);
-      }
-
-      lastScrollTopRef.current = scrollTop;
-    },
-    [isMobileNavOpen],
-  );
+    return () => {
+      delete document.body.dataset.galleryAtBottom;
+    };
+  }, []);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col px-4 py-5">
-      <header
-        className={`relative z-50 bg-transparent transition-[margin] duration-300 ${
-          isHeaderVisible || isMobileNavOpen ? "mb-4" : "mb-0"
-        }`}
-      >
-        <div
-          className={`overflow-hidden lg:overflow-visible transition-[max-height,opacity,transform] duration-300 ${
-            isHeaderVisible || isMobileNavOpen
-              ? "max-h-32 translate-y-0 opacity-100"
-              : "max-h-0 -translate-y-3 opacity-0"
-          }`}
-        >
+      <header className="relative z-50 mb-4 bg-transparent">
+        <div className="overflow-hidden lg:overflow-visible">
           <nav
-            className={`flex items-center justify-between px-0 py-4 transition-colors duration-300 ${
-            hasScrolledDown ? "bg-[#ffa4fa]" : "bg-transparent"
-            }`}
+            className="flex items-center justify-between bg-transparent px-0 py-4"
           >
             <Link
               href="/"
@@ -650,7 +658,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
         <VirtualizedMasonryGrid
           assets={assets}
           onOpen={setSelectedAsset}
-          onScrollChange={handleMasonryScroll}
+          onScrollStateChange={syncFooterVisibility}
         />
       ) : (
         <div className="min-h-[60vh]" />

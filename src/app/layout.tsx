@@ -18,7 +18,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-        <footer className="px-4 py-4 text-center text-sm font-medium tracking-[0.01em] text-white">
+        <footer className="site-footer px-4 py-4 text-center text-sm font-medium tracking-[0.01em] text-white">
           bigpinkenergy@gmail.com
         </footer>
       </body>

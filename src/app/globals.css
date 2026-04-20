@@ -55,3 +55,23 @@ select {
   font: inherit;
   color: inherit;
 }
+
+.site-footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(100% + 0.5rem));
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+body[data-gallery-at-bottom="true"] .site-footer {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
