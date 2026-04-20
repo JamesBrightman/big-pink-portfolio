@@ -217,7 +217,7 @@ function NavFolderItem({
   const hasChildren = folder.folders.length > 0;
 
   return (
-    <div className="group/nav relative pb-3">
+    <div className="group/nav relative">
       <Link
         href={folderPathHref(pathSegments)}
         className={`block whitespace-nowrap pb-3 text-2xl font-medium uppercase tracking-[0.01em] transition sm:text-3xl ${
@@ -672,9 +672,9 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
   return (
     <section className="flex min-h-0 flex-1 flex-col px-4 py-5">
-      <header className="relative z-50 mb-4 bg-transparent">
+      <header className="relative z-50 mb-1 bg-transparent">
         <div className="overflow-hidden lg:overflow-visible">
-          <nav className="flex items-center justify-between bg-transparent px-0 py-4">
+          <nav className="flex items-center justify-between bg-transparent px-0 pb-2">
             <Link
               href="/"
               aria-label="Home"
