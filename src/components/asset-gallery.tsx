@@ -670,7 +670,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
           onClick={() => setSelectedAsset(null)}
         >
           <div
-            className="flex max-h-[95vh] max-w-[95vw] flex-col items-center"
+            className="expanded-asset-scroll flex max-h-[95vh] max-w-[95vw] flex-col items-center overflow-y-auto pr-3"
             onClick={(event) => event.stopPropagation()}
           >
             <img

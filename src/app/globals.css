@@ -75,3 +75,32 @@ body[data-gallery-at-bottom="true"] .site-footer {
   pointer-events: auto;
   transform: translateY(0);
 }
+
+.expanded-asset-scroll {
+  scrollbar-gutter: stable;
+}
+
+.expanded-asset-scroll::-webkit-scrollbar {
+  width: 14px;
+}
+
+.expanded-asset-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.expanded-asset-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.42);
+  background-clip: padding-box;
+}
+
+.expanded-asset-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.56);
+  background-clip: padding-box;
+}
+
+.masonry-scroll-shell .ReactVirtualized__Masonry__innerScrollContainer {
+  box-sizing: content-box;
+  padding-bottom: 68px;
+}
