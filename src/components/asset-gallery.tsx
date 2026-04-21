@@ -1,16 +1,28 @@
 "use client";
-
 /* eslint-disable @next/next/no-img-element */
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Link from "next/link";
 import {
+  type SyntheticEvent,
+  useCallback,
   useEffect,
-  useRef,
+  useMemo,
   useState,
   useSyncExternalStore,
-  type SyntheticEvent,
 } from "react";
+import {
+  AutoSizer,
+  CellMeasurer,
+  CellMeasurerCache,
+  Masonry,
+  createMasonryCellPositioner,
+  type MasonryCellProps,
+} from "react-virtualized";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
+
+const MASONRY_GUTTER = 16;
+const MASONRY_OVERSCAN_PX = 320;
+const MASONRY_EDGE_PADDING = 16;
+const FOOTER_REVEAL_THRESHOLD = 8;
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -79,6 +91,68 @@ function sortDropdownFolders(folders: AssetFolder[]) {
   });
 }
 
+function getColumnWidth(width: number, columnCount: number) {
+  return Math.max(
+    140,
+    Math.floor((width - MASONRY_GUTTER * (columnCount - 1)) / columnCount),
+  );
+}
+
+function getColumnCount(width: number) {
+  if (width >= 1440) {
+    return 6;
+  }
+
+  if (width >= 1200) {
+    return 5;
+  }
+
+  if (width >= 900) {
+    return 4;
+  }
+
+  if (width >= 640) {
+    return 3;
+  }
+
+  return 2;
+}
+
+function getAssetHeight(asset: AssetFile, columnWidth: number) {
+  if (
+    typeof asset.width === "number" &&
+    typeof asset.height === "number" &&
+    asset.width > 0
+  ) {
+    return Math.max(
+      180,
+      Math.round((asset.height / asset.width) * columnWidth),
+    );
+  }
+
+  return 220;
+}
+
+function getAssetKey(asset: AssetFile, index: number) {
+  return `${asset.src}::${index}`;
+}
+
+function attemptVideoAutoplay(video: HTMLVideoElement | null) {
+  if (!video) {
+    return;
+  }
+
+  video.muted = true;
+  video.playsInline = true;
+  video.loop = true;
+
+  const playback = video.play();
+
+  if (playback && typeof playback.catch === "function") {
+    playback.catch(() => {});
+  }
+}
+
 type NavFolderItemProps = {
   folder: AssetFolder;
   pathSegments: string[];
@@ -109,7 +183,7 @@ function FolderDropdownList({
       <Link
         href={folderPathHref(pathSegments)}
         onClick={onNavigate}
-        className={`block whitespace-nowrap px-3 py-2 text-sm font-medium uppercase tracking-[0.01em] transition text-left ${
+        className={`block whitespace-nowrap px-3 py-2 text-left text-sm font-medium uppercase tracking-[0.01em] transition ${
           isActive ? "italic text-white" : "text-white/80 hover:text-white"
         } ${depth > 0 ? "pl-6" : ""}`}
       >
@@ -143,7 +217,7 @@ function NavFolderItem({
   const hasChildren = folder.folders.length > 0;
 
   return (
-    <div className="group/nav relative pb-3">
+    <div className="group/nav relative">
       <Link
         href={folderPathHref(pathSegments)}
         className={`block whitespace-nowrap pb-3 text-2xl font-medium uppercase tracking-[0.01em] transition sm:text-3xl ${
@@ -286,100 +360,244 @@ function MobileNav({
   );
 }
 
-type AssetGalleryProps = {
-  tree: AssetFolder;
-  initialPath: string[];
-};
-
-function setVideoControls(
-  event: SyntheticEvent<HTMLVideoElement>,
-  isVisible: boolean,
-) {
-  event.currentTarget.controls = isVisible;
-}
-
-function attemptVideoAutoplay(video: HTMLVideoElement | null) {
-  if (!video) {
-    return;
-  }
-
-  video.muted = true;
-
-  const playAttempt = video.play();
-
-  if (playAttempt && typeof playAttempt.catch === "function") {
-    playAttempt.catch(() => {});
-  }
-}
-
-function MediaCard({
+function MasonryMediaCard({
   asset,
   onOpen,
 }: {
   asset: AssetFile;
   onOpen: (asset: AssetFile) => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    if (asset.kind !== "video") {
+  const videoAspectRatio =
+    typeof asset.width === "number" &&
+    typeof asset.height === "number" &&
+    asset.width > 0 &&
+    asset.height > 0
+      ? `${asset.width} / ${asset.height}`
+      : "9 / 16";
+  const setVideoRef = useCallback((video: HTMLVideoElement | null) => {
+    if (!video) {
       return;
     }
 
-    attemptVideoAutoplay(videoRef.current);
-  }, [asset.kind, asset.src]);
+    attemptVideoAutoplay(video);
+  }, []);
+  const handleVideoReady = useCallback(
+    (event: SyntheticEvent<HTMLVideoElement>) => {
+      attemptVideoAutoplay(event.currentTarget);
+    },
+    [],
+  );
 
   return (
-    <div className="group relative overflow-hidden rounded-[18px] border border-white/55 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-      {asset.kind === "image" ? (
-        <button
-          type="button"
-          onClick={() => onOpen(asset)}
-          className="block w-full"
+    <button
+      type="button"
+      onClick={() => onOpen(asset)}
+      className="group relative box-border block w-full appearance-none overflow-hidden rounded-[18px] border border-white/55 bg-white p-0 text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
+    >
+      {asset.kind === "video" ? (
+        <div
+          className="relative w-full overflow-hidden bg-black"
+          style={{ aspectRatio: videoAspectRatio }}
         >
-          <img
-            src={asset.thumbnailSrc ?? asset.src}
-            alt={asset.name}
-            loading="lazy"
-            decoding="async"
-            className="block h-auto w-full"
+          <video
+            ref={setVideoRef}
+            src={asset.src}
+            poster={asset.thumbnailSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            onCanPlay={handleVideoReady}
+            onLoadedData={handleVideoReady}
+            onLoadedMetadata={handleVideoReady}
+            className="absolute inset-0 block h-full w-full object-contain bg-black"
           />
-        </button>
+        </div>
       ) : (
-        <video
-          ref={videoRef}
-          src={asset.src}
-          autoPlay
-          loop
-          muted
-          onBlur={(event) => setVideoControls(event, false)}
-          onCanPlay={() => attemptVideoAutoplay(videoRef.current)}
-          onFocus={(event) => setVideoControls(event, true)}
-          onLoadedMetadata={() => attemptVideoAutoplay(videoRef.current)}
-          onMouseEnter={(event) => setVideoControls(event, true)}
-          onMouseLeave={(event) => setVideoControls(event, false)}
-          playsInline
-          preload="metadata"
+        <img
+          src={asset.thumbnailSrc ?? asset.src}
+          alt={asset.name}
+          loading="lazy"
+          decoding="async"
+          width={asset.width}
+          height={asset.height}
           className="block h-auto w-full"
         />
       )}
-
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100">
         <div className="max-w-[80%] text-center text-white">
           <p className="text-sm font-semibold tracking-tight">
-            {new Intl.DateTimeFormat("en-GB", {
-              year: "numeric",
-              timeZone: "UTC",
-            }).format(new Date(`${asset.date}T00:00:00Z`))}
+            {formatAssetYear(asset.date)}
           </p>
           <p className="mt-1 text-sm leading-5 text-white/90">
             {asset.description}
           </p>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
+
+function VirtualizedMasonryContent({
+  assets,
+  height,
+  onOpen,
+  onScrollStateChange,
+  width,
+}: {
+  assets: AssetFile[];
+  height: number;
+  onOpen: (asset: AssetFile) => void;
+  onScrollStateChange: (state: {
+    clientHeight: number;
+    scrollHeight: number;
+    scrollTop: number;
+  }) => void;
+  width: number;
+}) {
+  const assetKeys = useMemo(
+    () => assets.map((asset, index) => getAssetKey(asset, index)),
+    [assets],
+  );
+  const contentWidth = useMemo(
+    () => Math.max(0, width - MASONRY_EDGE_PADDING * 2),
+    [width],
+  );
+  const columnCount = useMemo(
+    () => getColumnCount(contentWidth),
+    [contentWidth],
+  );
+  const columnWidth = useMemo(
+    () => getColumnWidth(contentWidth, columnCount),
+    [columnCount, contentWidth],
+  );
+  const cache = useMemo(
+    () =>
+      new CellMeasurerCache({
+        defaultHeight:
+          assets[0] != null ? getAssetHeight(assets[0], columnWidth) : 220,
+        defaultWidth: columnWidth,
+        fixedWidth: true,
+        keyMapper: (rowIndex) => assetKeys[rowIndex] ?? rowIndex,
+      }),
+    [assetKeys, assets, columnWidth],
+  );
+  const positioner = useMemo(
+    () =>
+      createMasonryCellPositioner({
+        cellMeasurerCache: cache,
+        columnCount,
+        columnWidth,
+        spacer: MASONRY_GUTTER,
+      }),
+    [cache, columnCount, columnWidth],
+  );
+
+  const cellRenderer = useCallback(
+    ({ index, key, parent, style }: MasonryCellProps) => {
+      const asset = assets[index];
+
+      if (!asset) {
+        return null;
+      }
+
+      return (
+        <CellMeasurer cache={cache} index={index} key={key} parent={parent}>
+          {({ registerChild }) => (
+            <div
+              ref={registerChild}
+              style={{
+                ...style,
+                width: columnWidth,
+              }}
+            >
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  width: "100%",
+                }}
+              >
+                <MasonryMediaCard asset={asset} onOpen={onOpen} />
+              </div>
+            </div>
+          )}
+        </CellMeasurer>
+      );
+    },
+    [assets, cache, columnWidth, onOpen],
+  );
+
+  return (
+    <Masonry
+      autoHeight={false}
+      className="masonry-scroll-shell"
+      key={`${width}-${contentWidth}-${columnCount}-${columnWidth}`}
+      cellCount={assets.length}
+      cellMeasurerCache={cache}
+      cellPositioner={positioner}
+      cellRenderer={cellRenderer}
+      height={height}
+      keyMapper={(index) => assetKeys[index] ?? `asset-${index}`}
+      onScroll={onScrollStateChange}
+      overscanByPixels={MASONRY_OVERSCAN_PX}
+      style={{
+        boxSizing: "border-box",
+        scrollbarGutter: "stable",
+      }}
+      width={width}
+    />
+  );
+}
+
+function VirtualizedMasonryGrid({
+  assets,
+  onOpen,
+  onScrollStateChange,
+}: {
+  assets: AssetFile[];
+  onOpen: (asset: AssetFile) => void;
+  onScrollStateChange: (state: {
+    clientHeight: number;
+    scrollHeight: number;
+    scrollTop: number;
+  }) => void;
+}) {
+  return (
+    <>
+      <div className="-mx-4 min-h-0 flex-1 w-[calc(100%+2rem)]">
+        <AutoSizer>
+          {({ height, width }) =>
+            width > 0 && height > 0 ? (
+              <VirtualizedMasonryContent
+                assets={assets}
+                height={height}
+                onOpen={onOpen}
+                onScrollStateChange={onScrollStateChange}
+                width={width}
+              />
+            ) : (
+              <div className="min-h-[60vh]" />
+            )
+          }
+        </AutoSizer>
+      </div>
+      <style jsx global>{`
+        .masonry-scroll-shell .ReactVirtualized__Masonry__innerScrollContainer {
+          box-sizing: border-box;
+          width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
+          max-width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
+          margin-left: ${MASONRY_EDGE_PADDING}px;
+        }
+      `}</style>
+    </>
+  );
+}
+
+type AssetGalleryProps = {
+  tree: AssetFolder;
+  initialPath: string[];
+};
 
 export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const hasMounted = useSyncExternalStore(
@@ -389,8 +607,6 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   );
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetFile | null>(null);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [hasScrolledDown, setHasScrolledDown] = useState(false);
   const activePath = initialPath;
   let activeFolder = tree;
 
@@ -405,7 +621,25 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     activeFolder = next;
   }
 
-  const cards = collectFiles(activeFolder);
+  const assets = useMemo(() => collectFiles(activeFolder), [activeFolder]);
+  const syncFooterVisibility = useCallback(
+    ({
+      clientHeight,
+      scrollHeight,
+      scrollTop,
+    }: {
+      clientHeight: number;
+      scrollHeight: number;
+      scrollTop: number;
+    }) => {
+      const isAtBottom =
+        scrollHeight <= clientHeight ||
+        scrollTop + clientHeight >= scrollHeight - FOOTER_REVEAL_THRESHOLD;
+
+      document.body.dataset.galleryAtBottom = isAtBottom ? "true" : "false";
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!selectedAsset && !isMobileNavOpen) {
@@ -429,138 +663,103 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }, [isMobileNavOpen, selectedAsset]);
 
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-
-    const onScroll = () => {
-      const nextScrollY = window.scrollY;
-      const isNearTop = nextScrollY < 24;
-
-      setHasScrolledDown(!isNearTop);
-
-      if (isNearTop) {
-        setIsHeaderVisible(true);
-      } else if (nextScrollY < lastScrollY) {
-        setIsHeaderVisible(true);
-      } else if (nextScrollY > lastScrollY) {
-        setIsHeaderVisible(false);
-      }
-
-      lastScrollY = nextScrollY;
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
+    document.body.dataset.galleryAtBottom = "false";
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      delete document.body.dataset.galleryAtBottom;
     };
   }, []);
 
   return (
-    <section className="flex w-full flex-col px-4 py-5">
-      <header
-        className={`sticky z-30 mb-4 bg-transparent transition-[top,opacity] duration-300 ${
-          isHeaderVisible || isMobileNavOpen
-            ? "top-0 opacity-100"
-            : "-top-24 opacity-0"
-        }`}
-      >
-        <nav
-          className={`flex items-center justify-between px-0 py-4 transition-colors duration-300 ${
-            hasScrolledDown ? "bg-[#ffa4fa]" : "bg-transparent"
-          }`}
-        >
-          <Link
-            href="/"
-            aria-label="Home"
-            className={`relative flex items-center justify-center pb-3 transition ${
-              activePath.length === 0
-                ? "text-white italic"
-                : "text-white/85 hover:text-white"
-            }`}
-          >
-            <HomeIcon />
-          </Link>
+    <section className="flex min-h-0 flex-1 flex-col px-4 pt-5">
+      <header className="relative z-50 mb-1 bg-transparent">
+        <div className="overflow-hidden lg:overflow-visible">
+          <nav className="flex items-center justify-between bg-transparent px-0 pb-2">
+            <Link
+              href="/"
+              aria-label="Home"
+              className={`relative flex items-center justify-center pb-3 transition ${
+                activePath.length === 0
+                  ? "text-white italic"
+                  : "text-white/85 hover:text-white"
+              }`}
+            >
+              <HomeIcon />
+            </Link>
 
-          <div className="hidden flex-wrap items-center justify-end gap-8 lg:flex">
-            {tree.folders.map((folder) => (
-              <NavFolderItem
-                key={folder.name}
-                folder={folder}
-                pathSegments={[folder.name]}
-                activePath={activePath}
-              />
-            ))}
-          </div>
-
-          <MobileNav
-            tree={tree}
-            activePath={activePath}
-            isOpen={isMobileNavOpen}
-            onOpen={() => setIsMobileNavOpen(true)}
-            onClose={() => setIsMobileNavOpen(false)}
-          />
-        </nav>
-      </header>
-
-      {cards.length > 0 ? (
-        hasMounted ? (
-          <ResponsiveMasonry
-            columnsCountBreakPoints={{
-              0: 2,
-              640: 2,
-              1024: 4,
-              1280: 6,
-            }}
-          >
-            <Masonry gutter="16px">
-              {cards.map((asset) => (
-                <MediaCard
-                  key={`${asset.src}-${asset.name}`}
-                  asset={asset}
-                  onOpen={setSelectedAsset}
+            <div className="hidden flex-wrap items-center justify-end gap-8 lg:flex">
+              {tree.folders.map((folder) => (
+                <NavFolderItem
+                  key={folder.name}
+                  folder={folder}
+                  pathSegments={[folder.name]}
+                  activePath={activePath}
                 />
               ))}
-            </Masonry>
-          </ResponsiveMasonry>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-            {cards.map((asset) => (
-              <MediaCard
-                key={`${asset.src}-${asset.name}`}
-                asset={asset}
-                onOpen={setSelectedAsset}
-              />
-            ))}
-          </div>
-        )
-      ) : (
-        <div className="rounded-[1.75rem] border border-dashed border-[#d8e1ec] bg-white p-10 text-center">
-          <p className="text-lg font-medium text-[#121826]">
-            No media in this folder yet.
-          </p>
-          <p className="mt-2 text-sm leading-6 text-[#5c6675]">
-            Add images or videos to{" "}
-            <span className="font-medium text-[#2f6bed]">public/assets</span>{" "}
-            and they will appear here automatically.
-          </p>
+            </div>
+
+            <MobileNav
+              tree={tree}
+              activePath={activePath}
+              isOpen={isMobileNavOpen}
+              onOpen={() => setIsMobileNavOpen(true)}
+              onClose={() => setIsMobileNavOpen(false)}
+            />
+          </nav>
         </div>
+      </header>
+
+      {hasMounted ? (
+        <VirtualizedMasonryGrid
+          assets={assets}
+          onOpen={setSelectedAsset}
+          onScrollStateChange={syncFooterVisibility}
+        />
+      ) : (
+        <div className="min-h-[60vh]" />
       )}
 
       {selectedAsset ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-2 py-0 sm:p-4"
           onClick={() => setSelectedAsset(null)}
         >
           <div
-            className="flex max-h-[95vh] max-w-[95vw] flex-col items-center"
+            className="flex max-h-dvh w-full max-w-full flex-col items-center overflow-y-auto sm:max-h-[calc(100dvh-2rem)] sm:w-auto sm:max-w-[calc(100vw-2rem)] sm:pr-3"
             onClick={(event) => event.stopPropagation()}
           >
-            <img
-              src={selectedAsset.src}
-              alt={selectedAsset.name}
-              decoding="async"
-              className="max-h-[82vh] max-w-[95vw] rounded-[18px] object-contain"
-            />
+            <div className="flex min-h-0 w-full items-center justify-center sm:w-auto">
+              {selectedAsset.kind === "video" ? (
+                <video
+                  ref={attemptVideoAutoplay}
+                  src={selectedAsset.src}
+                  poster={selectedAsset.thumbnailSrc}
+                  autoPlay
+                  controls
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onCanPlay={(event) =>
+                    attemptVideoAutoplay(event.currentTarget)
+                  }
+                  onLoadedData={(event) =>
+                    attemptVideoAutoplay(event.currentTarget)
+                  }
+                  onLoadedMetadata={(event) =>
+                    attemptVideoAutoplay(event.currentTarget)
+                  }
+                  className="max-h-[calc(100dvh-6.5rem)] max-w-full rounded-[18px] object-contain sm:max-h-[calc(100dvh-2rem)] sm:max-w-[calc(100vw-2rem)]"
+                />
+              ) : (
+                <img
+                  src={selectedAsset.src}
+                  alt={selectedAsset.name}
+                  decoding="async"
+                  className="max-h-[calc(100dvh-6.5rem)] max-w-full rounded-[18px] object-contain sm:max-h-[calc(100dvh-2rem)] sm:max-w-[calc(100vw-2rem)]"
+                />
+              )}
+            </div>
 
             <div className="mt-4 w-full text-center text-white lg:hidden">
               <p className="text-sm font-semibold tracking-tight">

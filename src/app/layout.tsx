@@ -14,11 +14,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body
-        className="flex min-h-screen flex-col bg-[#FFA4FA] text-[#121826]"
+        className="flex h-screen overflow-hidden flex-col bg-[#FFA4FA] text-[#121826]"
         suppressHydrationWarning
       >
-        <div className="flex-1">{children}</div>
-        <footer className="px-4 py-4 text-center text-sm font-medium tracking-[0.01em] text-white">
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <footer className="site-footer -mt-[30px] mx-auto w-fit rounded-lg bg-[#FFA4FA] px-8 py-2 text-center text-sm font-medium tracking-[0.01em] text-white">
           bigpinkenergy@gmail.com
         </footer>
       </body>
