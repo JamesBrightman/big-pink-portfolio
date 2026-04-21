@@ -1,3 +1,4 @@
+import { cache } from "react";
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
@@ -435,9 +436,11 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
   };
 }
 
-export async function getAssetTree() {
+async function getAssetTreeUncached() {
   return readFolder(ASSET_ROOT, []);
 }
+
+export const getAssetTree = cache(getAssetTreeUncached);
 
 export function findFolderByPath(root: AssetFolder, pathSegments: string[]) {
   let current: AssetFolder = root;

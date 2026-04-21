@@ -29,5 +29,5 @@ export default async function CatchAllPage({ params }: RouteProps) {
     notFound();
   }
 
-  return <PortfolioPage initialPath={path} />;
+  return <PortfolioPage initialPath={path} tree={tree} />;
 }

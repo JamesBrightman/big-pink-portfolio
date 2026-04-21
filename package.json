@@ -7,6 +7,7 @@
     "dev:next": "next dev",
     "build": "next build",
     "build:pages": "node scripts/build-pages.mjs",
+    "optimize:new-images": "node scripts/optimize-new-images.mjs",
     "thumbnails": "node scripts/generate-thumbnails.mjs",
     "start": "node scripts/run-local.mjs start",
     "start:next": "next start",
