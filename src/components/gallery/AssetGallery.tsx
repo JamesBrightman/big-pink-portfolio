@@ -38,6 +38,16 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }
 
   const assets = useMemo(() => collectFiles(activeFolder), [activeFolder]);
+  const scrollGalleryToTop = () => {
+    const masonryScroller = document.querySelector<HTMLElement>(
+      ".masonry-scroll-shell",
+    );
+
+    masonryScroller?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   useEffect(() => {
     if (!selectedAsset && !isMobileNavOpen) {
@@ -65,17 +75,24 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       <header className="relative z-50 mb-1 bg-transparent">
         <div className="overflow-hidden lg:overflow-visible">
           <nav className="flex items-center justify-between bg-transparent px-0 pb-2">
-            <Link
-              href="/"
-              aria-label="Home"
-              className={`relative flex items-center justify-center pb-3 transition ${
-                activePath.length === 0
-                  ? "text-white italic"
-                  : "text-white/85 hover:text-white"
-              }`}
-            >
-              <HomeIcon />
-            </Link>
+            {activePath.length === 0 ? (
+              <button
+                type="button"
+                aria-label="Scroll to top"
+                onClick={scrollGalleryToTop}
+                className="relative flex items-center justify-center pb-3 text-white italic transition hover:text-white"
+              >
+                <HomeIcon />
+              </button>
+            ) : (
+              <Link
+                href="/"
+                aria-label="Home"
+                className="relative flex items-center justify-center pb-3 text-white/85 transition hover:text-white"
+              >
+                <HomeIcon />
+              </Link>
+            )}
 
             <div className="hidden flex-wrap items-center justify-end gap-8 lg:flex">
               {tree.folders.map((folder) => (
