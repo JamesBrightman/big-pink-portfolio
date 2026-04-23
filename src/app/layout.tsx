@@ -12,9 +12,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="h-full min-h-dvh antialiased"
+      suppressHydrationWarning
+    >
       <body
-        className="flex h-screen overflow-hidden flex-col bg-[#FFA4FA] text-[#121826]"
+        className="flex h-dvh min-h-dvh overflow-hidden flex-col bg-[#FFA4FA] text-[#121826]"
         suppressHydrationWarning
       >
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
