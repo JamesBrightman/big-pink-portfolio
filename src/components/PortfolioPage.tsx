@@ -1,4 +1,4 @@
-import { AssetGallery } from "@/components/AssetGallery";
+import { AssetGallery } from "@/components/gallery/AssetGallery";
 import { getAssetTree, type AssetFolder } from "@/lib/assets";
 
 type PortfolioPageProps = {

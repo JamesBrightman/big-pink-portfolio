@@ -1,6 +1,6 @@
 # Big Pink Portfolio
 
-Live site: [https://jamesbrightman.github.io/big-pink-portfolio/](https://jamesbrightman.github.io/big-pink-portfolio/)
+Live site: [https://www.bigpinkenergy.com/](https://www.bigpinkenergy.com/)
 
 ## Purpose
 
