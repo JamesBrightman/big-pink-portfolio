@@ -7,6 +7,8 @@
     "dev:next": "next dev",
     "build": "next build",
     "build:pages": "node scripts/build-pages.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "optimize:new-images": "node scripts/optimize-new-images.mjs",
     "thumbnails": "node scripts/generate-thumbnails.mjs",
     "start": "node scripts/run-local.mjs start",
@@ -32,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "ffprobe-static": "^3.1.0",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

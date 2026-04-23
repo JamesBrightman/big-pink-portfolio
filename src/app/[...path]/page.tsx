@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { AppRedirect } from "@/components/AppRedirect";
 import { PortfolioPage } from "@/components/PortfolioPage";
 import {
   collectFolderPaths,
@@ -26,7 +26,7 @@ export default async function CatchAllPage({ params }: RouteProps) {
   const tree = await getAssetTree();
 
   if (path.length > 0 && !findFolderByPath(tree, path)) {
-    notFound();
+    return <AppRedirect href="/" />;
   }
 
   return <PortfolioPage initialPath={path} tree={tree} />;

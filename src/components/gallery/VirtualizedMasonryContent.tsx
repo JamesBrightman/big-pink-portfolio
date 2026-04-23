@@ -7,7 +7,11 @@ import {
   type MasonryCellProps,
 } from "react-virtualized";
 import type { AssetFile } from "@/lib/assets";
-import { MASONRY_EDGE_PADDING, MASONRY_GUTTER, MASONRY_OVERSCAN_PX } from "@/components/gallery/galleryConstants";
+import {
+  MASONRY_EDGE_PADDING,
+  MASONRY_GUTTER,
+  MASONRY_OVERSCAN_PX,
+} from "@/components/gallery/galleryConstants";
 import { GalleryFooter } from "@/components/gallery/GalleryFooter";
 import {
   getAssetHeight,

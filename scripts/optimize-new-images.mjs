@@ -60,7 +60,12 @@ async function readFolderMetadata(folderPath) {
       items: JSON.parse(raw),
     };
   } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
       return {
         metadataPath,
         items: null,
@@ -110,7 +115,11 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
     const sourcePath = path.join(folderPath, entry.name);
 
     if (entry.isDirectory()) {
-      await optimizeFolder(sourcePath, [...relativeSegments, entry.name], summary);
+      await optimizeFolder(
+        sourcePath,
+        [...relativeSegments, entry.name],
+        summary,
+      );
       continue;
     }
 
@@ -134,7 +143,9 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
       );
     }
 
-    const metadataIndex = items.findIndex((item) => item.fileName === entry.name);
+    const metadataIndex = items.findIndex(
+      (item) => item.fileName === entry.name,
+    );
 
     if (metadataIndex === -1) {
       throw new Error(

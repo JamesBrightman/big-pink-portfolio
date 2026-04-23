@@ -43,7 +43,11 @@ export type AssetFolder = {
 const ASSET_ROOT = path.join(process.cwd(), "public", "assets");
 const THUMBNAIL_ROOT = path.join(process.cwd(), "public", "assets-thumbs");
 const PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const ffprobePackageRoot = path.join(process.cwd(), "node_modules", "ffprobe-static");
+const ffprobePackageRoot = path.join(
+  process.cwd(),
+  "node_modules",
+  "ffprobe-static",
+);
 const MEDIA_EXTENSIONS = new Set([
   ".avif",
   ".gif",
@@ -79,7 +83,11 @@ function getAssetPublicSrc(relativeSegments: string[], fileName: string) {
 
 function getThumbnailPublicSrc(relativeSegments: string[], fileName: string) {
   return `${PUBLIC_BASE_PATH}/${toPublicSrc(
-    path.join("assets-thumbs", ...relativeSegments, `${fileBaseName(fileName)}.webp`),
+    path.join(
+      "assets-thumbs",
+      ...relativeSegments,
+      `${fileBaseName(fileName)}.webp`,
+    ),
   )}`;
 }
 
@@ -144,7 +152,11 @@ async function readFileHeader(filePath: string, length: number) {
 }
 
 function parseWebpDimensions(buffer: Buffer): AssetDimensions | null {
-  if (buffer.length < 30 || buffer.toString("ascii", 0, 4) !== "RIFF" || buffer.toString("ascii", 8, 12) !== "WEBP") {
+  if (
+    buffer.length < 30 ||
+    buffer.toString("ascii", 0, 4) !== "RIFF" ||
+    buffer.toString("ascii", 8, 12) !== "WEBP"
+  ) {
     return null;
   }
 
@@ -233,9 +245,7 @@ function parseJpegDimensions(buffer: Buffer): AssetDimensions | null {
     }
 
     const isStartOfFrame =
-      marker >= 0xc0 &&
-      marker <= 0xcf &&
-      ![0xc4, 0xc8, 0xcc].includes(marker);
+      marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker);
 
     if (isStartOfFrame) {
       return {
@@ -250,7 +260,9 @@ function parseJpegDimensions(buffer: Buffer): AssetDimensions | null {
   return null;
 }
 
-async function readImageDimensions(filePath: string): Promise<AssetDimensions | null> {
+async function readImageDimensions(
+  filePath: string,
+): Promise<AssetDimensions | null> {
   const extension = path.extname(filePath).toLowerCase();
 
   if (extension === ".webp") {
@@ -360,7 +372,10 @@ async function readVideoDimensions(
   });
 }
 
-async function readFolder(folderPath: string, relativeSegments: string[]): Promise<AssetFolder> {
+async function readFolder(
+  folderPath: string,
+  relativeSegments: string[],
+): Promise<AssetFolder> {
   const entries = await fs.readdir(folderPath, { withFileTypes: true });
   const folders: AssetFolder[] = [];
   const files: AssetFile[] = [];
@@ -370,7 +385,9 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
     const nextPath = path.join(folderPath, entry.name);
 
     if (entry.isDirectory()) {
-      folders.push(await readFolder(nextPath, [...relativeSegments, entry.name]));
+      folders.push(
+        await readFolder(nextPath, [...relativeSegments, entry.name]),
+      );
       continue;
     }
 
@@ -407,18 +424,19 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
       kind === "video"
         ? await readVideoDimensions(nextPath)
         : hasThumbnail || kind === "image"
-          ? await readImageDimensions(hasThumbnail ? thumbnailFilePath : nextPath)
+          ? await readImageDimensions(
+              hasThumbnail ? thumbnailFilePath : nextPath,
+            )
           : null;
 
     files.push({
       name: entry.name,
       src: getAssetPublicSrc(relativeSegments, entry.name),
-      thumbnailSrc:
-        hasThumbnail
-          ? getThumbnailPublicSrc(relativeSegments, entry.name)
-          : kind === "image"
-            ? getAssetPublicSrc(relativeSegments, entry.name)
-            : undefined,
+      thumbnailSrc: hasThumbnail
+        ? getThumbnailPublicSrc(relativeSegments, entry.name)
+        : kind === "image"
+          ? getAssetPublicSrc(relativeSegments, entry.name)
+          : undefined,
       kind,
       ...metadata,
       ...(displayedDimensions ?? null),
@@ -472,9 +490,14 @@ export function getAssetsForPath(root: AssetFolder, pathSegments: string[]) {
   return collectFilesFromFolder(folder);
 }
 
-export function collectFolderPaths(root: AssetFolder, prefix: string[] = []): string[][] {
+export function collectFolderPaths(
+  root: AssetFolder,
+  prefix: string[] = [],
+): string[][] {
   return [
     prefix,
-    ...root.folders.flatMap((folder) => collectFolderPaths(folder, [...prefix, folder.name])),
+    ...root.folders.flatMap((folder) =>
+      collectFolderPaths(folder, [...prefix, folder.name]),
+    ),
   ];
 }

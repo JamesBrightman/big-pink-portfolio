@@ -5,7 +5,7 @@ import { socialLinks } from "@/components/gallery/galleryConstants";
 
 export function GalleryFooter() {
   return (
-    <footer className="flex min-h-20 w-full flex-col items-center justify-center gap-1 bg-[rgb(225,80,172)] px-4 py-2 text-sm font-medium tracking-[0.01em] text-white sm:grid sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-2 sm:px-6 sm:py-2">
+    <footer className="flex min-h-20 w-full flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 text-sm font-medium tracking-[0.01em] text-white sm:grid sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-2 sm:px-6 sm:py-2">
       <a
         href="mailto:bigpinkenergy@gmail.com"
         className="text-center hover:underline sm:col-start-1 sm:self-center sm:justify-self-start sm:text-left sm:text-base"

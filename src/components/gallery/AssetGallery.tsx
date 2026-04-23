@@ -104,10 +104,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       </header>
 
       {hasMounted ? (
-        <VirtualizedMasonryGrid
-          assets={assets}
-          onOpen={setSelectedAsset}
-        />
+        <VirtualizedMasonryGrid assets={assets} onOpen={setSelectedAsset} />
       ) : (
         <div className="min-h-[60vh]" />
       )}

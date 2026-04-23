@@ -1,6 +1,10 @@
 export function YouTubeIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 sm:h-6 sm:w-6">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-5 w-5 sm:h-6 sm:w-6"
+    >
       <path
         d="M21.6 7.25a3.02 3.02 0 0 0-2.13-2.13C17.6 4.62 12 4.62 12 4.62s-5.6 0-7.47.5A3.02 3.02 0 0 0 2.4 7.25 31.65 31.65 0 0 0 1.9 12c0 1.62.17 3.22.5 4.75a3.02 3.02 0 0 0 2.13 2.13c1.87.5 7.47.5 7.47.5s5.6 0 7.47-.5a3.02 3.02 0 0 0 2.13-2.13c.33-1.53.5-3.13.5-4.75s-.17-3.22-.5-4.75ZM10 15.4V8.6l5.9 3.4L10 15.4Z"
         fill="currentColor"

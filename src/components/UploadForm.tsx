@@ -16,7 +16,8 @@ type DirectoryPickerWindow = Window &
 type ImageBitmapWithOrientationOptions = ImageBitmapOptions & {
   imageOrientation?: "from-image" | "flipY" | "none";
 };
-const localUploadHelperUrl = process.env.NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL ?? "";
+const localUploadHelperUrl =
+  process.env.NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL ?? "";
 const THUMBNAIL_MAX_WIDTH = 420;
 
 function isDirectoryHandle(value: unknown): value is DirectoryHandle {
@@ -55,7 +56,9 @@ async function writeFile(
   fileName: string,
   data: BlobPart,
 ): Promise<void> {
-  const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+  const fileHandle = await directoryHandle.getFileHandle(fileName, {
+    create: true,
+  });
   const writable = await fileHandle.createWritable();
   await writable.write(data);
   await writable.close();
@@ -209,7 +212,9 @@ async function buildUploadAsset(
   }
 
   if (isGif(file)) {
-    throw new Error("Animated GIF conversion requires the local upload helper. Use npm run dev or npm run start.");
+    throw new Error(
+      "Animated GIF conversion requires the local upload helper. Use npm run dev or npm run start.",
+    );
   }
 
   return convertImageToWebp(file, options);
@@ -218,7 +223,9 @@ async function buildUploadAsset(
 export function UploadForm({ folderOptions }: UploadFormProps) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [repoRootHandle, setRepoRootHandle] = useState<DirectoryHandle | null>(null);
+  const [repoRootHandle, setRepoRootHandle] = useState<DirectoryHandle | null>(
+    null,
+  );
   const [repoRootName, setRepoRootName] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -231,12 +238,16 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
     const pickerWindow = window as DirectoryPickerWindow;
 
     if (!pickerWindow.showDirectoryPicker) {
-      setError("This browser does not support local repo access. Use Chrome or Edge.");
+      setError(
+        "This browser does not support local repo access. Use Chrome or Edge.",
+      );
       return;
     }
 
     try {
-      const handle = await pickerWindow.showDirectoryPicker({ mode: "readwrite" });
+      const handle = await pickerWindow.showDirectoryPicker({
+        mode: "readwrite",
+      });
       if (!isDirectoryHandle(handle)) {
         throw new Error("Invalid directory selection");
       }
@@ -245,13 +256,18 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
       setRepoRootHandle(handle);
       setRepoRootName(handle.name);
     } catch (selectionError) {
-      if (selectionError instanceof DOMException && selectionError.name === "AbortError") {
+      if (
+        selectionError instanceof DOMException &&
+        selectionError.name === "AbortError"
+      ) {
         return;
       }
 
       setRepoRootHandle(null);
       setRepoRootName("");
-      setError("Select the root folder of this repo so the uploader can update public/assets.");
+      setError(
+        "Select the root folder of this repo so the uploader can update public/assets.",
+      );
     }
   }
 
@@ -301,30 +317,40 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
 
     try {
       const folderSegments = folderValue.split("/").filter(Boolean);
-      const assetDirectory = await getDirectoryHandle(
-        repoRootHandle,
-        ["public", "assets", ...folderSegments],
-      );
+      const assetDirectory = await getDirectoryHandle(repoRootHandle, [
+        "public",
+        "assets",
+        ...folderSegments,
+      ]);
       const thumbnailDirectory = await getDirectoryHandle(
         repoRootHandle,
         ["public", "assets-thumbs", ...folderSegments],
         true,
       );
-      const originalsDirectory = await getDirectoryHandle(repoRootHandle, ["originals"], true);
+      const originalsDirectory = await getDirectoryHandle(
+        repoRootHandle,
+        ["originals"],
+        true,
+      );
 
       const originalName = fileValue.name;
       const targetAsset = getTargetAsset(fileValue);
       const outputName = targetAsset.fileName;
 
       if (await fileExists(assetDirectory, outputName)) {
-        throw new Error(`An asset with that name already exists in the selected folder.`);
+        throw new Error(
+          `An asset with that name already exists in the selected folder.`,
+        );
       }
 
       if (await fileExists(originalsDirectory, originalName)) {
-        throw new Error("An original file with that name already exists in originals.");
+        throw new Error(
+          "An original file with that name already exists in originals.",
+        );
       }
 
-      const metadataRaw = (await readTextFile(assetDirectory, "data.json")) ?? "[]";
+      const metadataRaw =
+        (await readTextFile(assetDirectory, "data.json")) ?? "[]";
       const metadata = JSON.parse(metadataRaw) as Array<{
         fileName: string;
         description: string;
@@ -339,7 +365,8 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
         throw new Error("Metadata already exists for that asset file.");
       }
 
-      const outputData = targetAsset.data ?? (await buildUploadAsset(fileValue));
+      const outputData =
+        targetAsset.data ?? (await buildUploadAsset(fileValue));
       const thumbnailData = await buildUploadAsset(fileValue, {
         maxWidth: THUMBNAIL_MAX_WIDTH,
       });
@@ -354,7 +381,11 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
         date: dateValue.trim(),
       });
 
-      await writeFile(assetDirectory, "data.json", `${JSON.stringify(metadata, null, 2)}\n`);
+      await writeFile(
+        assetDirectory,
+        "data.json",
+        `${JSON.stringify(metadata, null, 2)}\n`,
+      );
 
       setStatus(
         `Added ${outputName} to ${folderValue} as ${targetAsset.outputLabel}, wrote a ${THUMBNAIL_MAX_WIDTH}px thumbnail, and copied ${originalName} into originals.`,
@@ -364,7 +395,9 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
         fileInputRef.current.value = "";
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Upload failed.");
+      setError(
+        submitError instanceof Error ? submitError.message : "Upload failed.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -378,7 +411,9 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
         </p>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-[#5b6270]">
-            {repoRootHandle ? `Connected to ${repoRootName}` : "Select the root folder of this repo."}
+            {repoRootHandle
+              ? `Connected to ${repoRootName}`
+              : "Select the root folder of this repo."}
           </p>
           <button
             type="button"
@@ -400,7 +435,11 @@ export function UploadForm({ folderOptions }: UploadFormProps) {
             className="rounded-md border border-[#d8e1ec] bg-white px-3 py-2 text-[#121826] outline-none transition focus:border-[#c8d4e2]"
           >
             {folderOptions.map((folder) => (
-              <option key={folder} value={folder} className="bg-white text-[#121826]">
+              <option
+                key={folder}
+                value={folder}
+                className="bg-white text-[#121826]"
+              >
                 {folder.replaceAll("/", " / ")}
               </option>
             ))}

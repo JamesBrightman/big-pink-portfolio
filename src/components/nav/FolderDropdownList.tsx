@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { AssetFolder } from "@/lib/assets";
-import { folderPathHref, isPathActive, sortDropdownFolders } from "@/components/nav/navUtils";
+import {
+  folderPathHref,
+  isPathActive,
+  sortDropdownFolders,
+} from "@/components/nav/navUtils";
 
 type FolderDropdownListProps = {
   folder: AssetFolder;
