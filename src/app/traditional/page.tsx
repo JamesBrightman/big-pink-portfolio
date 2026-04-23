@@ -1,6 +1,5 @@
-import { PortfolioPage } from "@/components/portfolio-page";
+import { PortfolioPage } from "@/components/PortfolioPage";
 
 export default async function TraditionalPage() {
   return <PortfolioPage initialPath={["traditional"]} />;
 }
-

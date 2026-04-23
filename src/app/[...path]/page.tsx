@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PortfolioPage } from "@/components/portfolio-page";
+import { PortfolioPage } from "@/components/PortfolioPage";
 import {
   collectFolderPaths,
   findFolderByPath,

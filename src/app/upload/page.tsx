@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UploadForm } from "@/components/upload-form";
+import { UploadForm } from "@/components/UploadForm";
 import { collectFolderPaths, getAssetTree } from "@/lib/assets";
 
 export default async function UploadPage() {
