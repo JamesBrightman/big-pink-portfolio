@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { AssetFolder } from "@/lib/assets";
 import { CloseIcon } from "@/components/icons/CloseIcon";
 import { MenuIcon } from "@/components/icons/MenuIcon";
 import { FolderDropdownList } from "@/components/nav/FolderDropdownList";
@@ -8,14 +7,7 @@ import {
   isPathActive,
   sortDropdownFolders,
 } from "@/components/nav/navUtils";
-
-type MobileNavProps = {
-  tree: AssetFolder;
-  activePath: string[];
-  isOpen: boolean;
-  onOpen: () => void;
-  onClose: () => void;
-};
+import type { MobileNavProps } from "@/components/nav/types";
 
 export function MobileNav({
   tree,

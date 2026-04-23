@@ -1,16 +1,11 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import { type SyntheticEvent, useCallback } from "react";
-import type { AssetFile } from "@/lib/assets";
 import {
   attemptVideoAutoplay,
   formatAssetYear,
 } from "@/components/gallery/galleryUtils";
-
-type MasonryMediaCardProps = {
-  asset: AssetFile;
-  onOpen: (asset: AssetFile) => void;
-};
+import type { MasonryMediaCardProps } from "@/components/gallery/types";
 
 export function MasonryMediaCard({ asset, onOpen }: MasonryMediaCardProps) {
   const videoAspectRatio =

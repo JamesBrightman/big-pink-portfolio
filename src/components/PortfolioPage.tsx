@@ -1,10 +1,6 @@
 import { AssetGallery } from "@/components/gallery/AssetGallery";
-import { getAssetTree, type AssetFolder } from "@/lib/assets";
-
-type PortfolioPageProps = {
-  initialPath: string[];
-  tree?: AssetFolder;
-};
+import { getAssetTree } from "@/lib/assets";
+import type { PortfolioPageProps } from "@/components/types";
 
 export async function PortfolioPage({ initialPath, tree }: PortfolioPageProps) {
   const assetTree = tree ?? (await getAssetTree());

@@ -2,10 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-type AppRedirectProps = {
-  href: string;
-};
+import type { AppRedirectProps } from "@/components/types";
 
 export function AppRedirect({ href }: AppRedirectProps) {
   const router = useRouter();

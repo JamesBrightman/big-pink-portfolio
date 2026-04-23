@@ -6,7 +6,6 @@ import {
   Masonry,
   type MasonryCellProps,
 } from "react-virtualized";
-import type { AssetFile } from "@/lib/assets";
 import {
   MASONRY_EDGE_PADDING,
   MASONRY_GUTTER,
@@ -21,13 +20,7 @@ import {
 } from "@/components/gallery/galleryUtils";
 import { createFooterPositioner } from "@/components/gallery/masonryPositioning";
 import { MasonryMediaCard } from "@/components/gallery/MasonryMediaCard";
-
-type VirtualizedMasonryContentProps = {
-  assets: AssetFile[];
-  height: number;
-  onOpen: (asset: AssetFile) => void;
-  width: number;
-};
+import type { VirtualizedMasonryContentProps } from "@/components/gallery/types";
 
 export function VirtualizedMasonryContent({
   assets,

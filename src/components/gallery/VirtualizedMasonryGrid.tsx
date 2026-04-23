@@ -1,13 +1,8 @@
 "use client";
 import { AutoSizer } from "react-virtualized";
-import type { AssetFile } from "@/lib/assets";
 import { MASONRY_EDGE_PADDING } from "@/components/gallery/galleryConstants";
+import type { VirtualizedMasonryGridProps } from "@/components/gallery/types";
 import { VirtualizedMasonryContent } from "@/components/gallery/VirtualizedMasonryContent";
-
-type VirtualizedMasonryGridProps = {
-  assets: AssetFile[];
-  onOpen: (asset: AssetFile) => void;
-};
 
 export function VirtualizedMasonryGrid({
   assets,

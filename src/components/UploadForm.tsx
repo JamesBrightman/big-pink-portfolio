@@ -1,21 +1,12 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-
-type UploadFormProps = {
-  folderOptions: string[];
-};
-
-type DirectoryHandle = FileSystemDirectoryHandle;
-type DirectoryPickerWindow = Window &
-  typeof globalThis & {
-    showDirectoryPicker?: (options?: {
-      mode?: "read" | "readwrite";
-    }) => Promise<DirectoryHandle>;
-  };
-type ImageBitmapWithOrientationOptions = ImageBitmapOptions & {
-  imageOrientation?: "from-image" | "flipY" | "none";
-};
+import type {
+  DirectoryHandle,
+  DirectoryPickerWindow,
+  ImageBitmapWithOrientationOptions,
+  UploadFormProps,
+} from "@/components/upload/types";
 const localUploadHelperUrl =
   process.env.NEXT_PUBLIC_LOCAL_UPLOAD_HELPER_URL ?? "";
 const THUMBNAIL_MAX_WIDTH = 420;

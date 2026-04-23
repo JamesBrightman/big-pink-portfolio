@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { AssetFile, AssetFolder } from "@/lib/assets";
+import type { AssetFile } from "@/lib/assets";
 import { HomeIcon } from "@/components/icons/HomeIcon";
 import {
   attemptVideoAutoplay,
@@ -10,14 +10,10 @@ import {
   formatAssetYear,
   subscribeToHydration,
 } from "@/components/gallery/galleryUtils";
+import type { AssetGalleryProps } from "@/components/gallery/types";
 import { VirtualizedMasonryGrid } from "@/components/gallery/VirtualizedMasonryGrid";
 import { MobileNav } from "@/components/nav/MobileNav";
 import { NavFolderItem } from "@/components/nav/NavFolderItem";
-
-type AssetGalleryProps = {
-  tree: AssetFolder;
-  initialPath: string[];
-};
 
 export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const hasMounted = useSyncExternalStore(
