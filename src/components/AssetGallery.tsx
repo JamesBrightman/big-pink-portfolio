@@ -16,13 +16,60 @@ import {
   Masonry,
   createMasonryCellPositioner,
   type MasonryCellProps,
+  type Positioner,
 } from "react-virtualized";
 import type { AssetFile, AssetFolder } from "@/lib/assets";
 
 const MASONRY_GUTTER = 16;
 const MASONRY_OVERSCAN_PX = 320;
 const MASONRY_EDGE_PADDING = 16;
-const FOOTER_REVEAL_THRESHOLD = 8;
+
+type FooterPositionerParams = {
+  cellMeasurerCache: CellMeasurerCache;
+  columnCount: number;
+  columnWidth: number;
+  footerIndex: number;
+  spacer: number;
+};
+
+const socialLinks = [
+  {
+    label: "TikTok",
+    href: "https://www.tiktok.com/discover/bigpinkenergy",
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+        <path
+          d="M14 3v11.25a4.75 4.75 0 1 1-4.75-4.75c.42 0 .83.06 1.21.16v2.86a2 2 0 1 0 1.04 1.75V3h2.5Zm0 0c.32 2.16 1.78 3.8 4 4.2v2.82a7.37 7.37 0 0 1-4-1.36V3Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@bigpinkenergy",
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+        <path
+          d="M21.6 7.25a3.02 3.02 0 0 0-2.13-2.13C17.6 4.62 12 4.62 12 4.62s-5.6 0-7.47.5A3.02 3.02 0 0 0 2.4 7.25 31.65 31.65 0 0 0 1.9 12c0 1.62.17 3.22.5 4.75a3.02 3.02 0 0 0 2.13 2.13c1.87.5 7.47.5 7.47.5s5.6 0 7.47-.5a3.02 3.02 0 0 0 2.13-2.13c.33-1.53.5-3.13.5-4.75s-.17-3.22-.5-4.75ZM10 15.4V8.6l5.9 3.4L10 15.4Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/bigpinkenergy/",
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+        <path
+          d="M7.5 2.75h9A4.75 4.75 0 0 1 21.25 7.5v9a4.75 4.75 0 0 1-4.75 4.75h-9a4.75 4.75 0 0 1-4.75-4.75v-9A4.75 4.75 0 0 1 7.5 2.75Zm0 2A2.75 2.75 0 0 0 4.75 7.5v9a2.75 2.75 0 0 0 2.75 2.75h9a2.75 2.75 0 0 0 2.75-2.75v-9a2.75 2.75 0 0 0-2.75-2.75h-9ZM12 7.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Zm4.75-2.15a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
+];
 
 function collectFiles(folder: AssetFolder): AssetFile[] {
   const childFiles = folder.folders.flatMap(collectFiles);
@@ -135,6 +182,74 @@ function getAssetHeight(asset: AssetFile, columnWidth: number) {
 
 function getAssetKey(asset: AssetFile, index: number) {
   return `${asset.src}::${index}`;
+}
+
+function getFooterTop({
+  cellMeasurerCache,
+  columnCount,
+  footerIndex,
+  spacer,
+}: Pick<
+  FooterPositionerParams,
+  "cellMeasurerCache" | "columnCount" | "footerIndex" | "spacer"
+>) {
+  const columnHeights = Array.from({ length: columnCount }, () => 0);
+
+  for (let index = 0; index < footerIndex; index += 1) {
+    let shortestColumnIndex = 0;
+
+    for (
+      let columnIndex = 1;
+      columnIndex < columnHeights.length;
+      columnIndex += 1
+    ) {
+      if (columnHeights[columnIndex] < columnHeights[shortestColumnIndex]) {
+        shortestColumnIndex = columnIndex;
+      }
+    }
+
+    columnHeights[shortestColumnIndex] +=
+      cellMeasurerCache.getHeight(index, 0) + spacer;
+  }
+
+  return Math.max(...columnHeights);
+}
+
+function createFooterPositioner({
+  cellMeasurerCache,
+  columnCount,
+  columnWidth,
+  footerIndex,
+  spacer,
+}: FooterPositionerParams): Positioner {
+  const imagePositioner = createMasonryCellPositioner({
+    cellMeasurerCache,
+    columnCount,
+    columnWidth,
+    spacer,
+  });
+
+  const positioner = ((index: number) => {
+    if (index !== footerIndex) {
+      return imagePositioner(index);
+    }
+
+    return {
+      left: 0,
+      top: getFooterTop({
+        cellMeasurerCache,
+        columnCount,
+        footerIndex,
+        spacer,
+      }),
+    };
+  }) as Positioner;
+
+  positioner.reset = (params) => {
+    imagePositioner.reset(params);
+  };
+
+  return positioner;
 }
 
 function attemptVideoAutoplay(video: HTMLVideoElement | null) {
@@ -439,27 +554,45 @@ function MasonryMediaCard({
   );
 }
 
+function GalleryFooter() {
+  return (
+    <footer className="flex min-h-24 w-full flex-col items-center justify-center gap-2 bg-[#D848C8] px-4 py-3 text-sm font-medium tracking-[0.01em] text-white sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-8">
+      <span className="text-center sm:col-start-2">
+        bigpinkenergy@gmail.com
+      </span>
+      <div className="flex justify-center gap-4 sm:col-start-3 sm:justify-end sm:gap-3">
+        {socialLinks.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            aria-label={link.label}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:h-9 sm:w-9"
+          >
+            {link.icon}
+          </a>
+        ))}
+      </div>
+    </footer>
+  );
+}
+
 function VirtualizedMasonryContent({
   assets,
   height,
   onOpen,
-  onScrollStateChange,
   width,
 }: {
   assets: AssetFile[];
   height: number;
   onOpen: (asset: AssetFile) => void;
-  onScrollStateChange: (state: {
-    clientHeight: number;
-    scrollHeight: number;
-    scrollTop: number;
-  }) => void;
   width: number;
 }) {
   const assetKeys = useMemo(
     () => assets.map((asset, index) => getAssetKey(asset, index)),
     [assets],
   );
+  const footerIndex = assets.length;
+  const cellCount = assets.length + 1;
   const contentWidth = useMemo(
     () => Math.max(0, width - MASONRY_EDGE_PADDING * 2),
     [width],
@@ -485,17 +618,37 @@ function VirtualizedMasonryContent({
   );
   const positioner = useMemo(
     () =>
-      createMasonryCellPositioner({
+      createFooterPositioner({
         cellMeasurerCache: cache,
         columnCount,
         columnWidth,
+        footerIndex,
         spacer: MASONRY_GUTTER,
       }),
-    [cache, columnCount, columnWidth],
+    [cache, columnCount, columnWidth, footerIndex],
   );
 
   const cellRenderer = useCallback(
     ({ index, key, parent, style }: MasonryCellProps) => {
+      if (index === footerIndex) {
+        return (
+          <CellMeasurer cache={cache} index={index} key={key} parent={parent}>
+            {({ registerChild }) => (
+              <div
+                ref={registerChild}
+                style={{
+                  ...style,
+                  marginLeft: -MASONRY_EDGE_PADDING,
+                  width,
+                }}
+              >
+                <GalleryFooter />
+              </div>
+            )}
+          </CellMeasurer>
+        );
+      }
+
       const asset = assets[index];
 
       if (!asset) {
@@ -525,7 +678,7 @@ function VirtualizedMasonryContent({
         </CellMeasurer>
       );
     },
-    [assets, cache, columnWidth, onOpen],
+    [assets, cache, columnWidth, footerIndex, onOpen, width],
   );
 
   return (
@@ -533,13 +686,12 @@ function VirtualizedMasonryContent({
       autoHeight={false}
       className="masonry-scroll-shell"
       key={`${width}-${contentWidth}-${columnCount}-${columnWidth}`}
-      cellCount={assets.length}
+      cellCount={cellCount}
       cellMeasurerCache={cache}
       cellPositioner={positioner}
       cellRenderer={cellRenderer}
       height={height}
-      keyMapper={(index) => assetKeys[index] ?? `asset-${index}`}
-      onScroll={onScrollStateChange}
+      keyMapper={(index) => assetKeys[index] ?? "gallery-footer"}
       overscanByPixels={MASONRY_OVERSCAN_PX}
       style={{
         boxSizing: "border-box",
@@ -553,15 +705,9 @@ function VirtualizedMasonryContent({
 function VirtualizedMasonryGrid({
   assets,
   onOpen,
-  onScrollStateChange,
 }: {
   assets: AssetFile[];
   onOpen: (asset: AssetFile) => void;
-  onScrollStateChange: (state: {
-    clientHeight: number;
-    scrollHeight: number;
-    scrollTop: number;
-  }) => void;
 }) {
   return (
     <>
@@ -573,7 +719,6 @@ function VirtualizedMasonryGrid({
                 assets={assets}
                 height={height}
                 onOpen={onOpen}
-                onScrollStateChange={onScrollStateChange}
                 width={width}
               />
             ) : (
@@ -588,6 +733,7 @@ function VirtualizedMasonryGrid({
           width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
           max-width: calc(100% - ${MASONRY_EDGE_PADDING * 2}px);
           margin-left: ${MASONRY_EDGE_PADDING}px;
+          overflow: visible !important;
         }
       `}</style>
     </>
@@ -622,24 +768,6 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }
 
   const assets = useMemo(() => collectFiles(activeFolder), [activeFolder]);
-  const syncFooterVisibility = useCallback(
-    ({
-      clientHeight,
-      scrollHeight,
-      scrollTop,
-    }: {
-      clientHeight: number;
-      scrollHeight: number;
-      scrollTop: number;
-    }) => {
-      const isAtBottom =
-        scrollHeight <= clientHeight ||
-        scrollTop + clientHeight >= scrollHeight - FOOTER_REVEAL_THRESHOLD;
-
-      document.body.dataset.galleryAtBottom = isAtBottom ? "true" : "false";
-    },
-    [],
-  );
 
   useEffect(() => {
     if (!selectedAsset && !isMobileNavOpen) {
@@ -661,14 +789,6 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       document.body.style.overflow = "";
     };
   }, [isMobileNavOpen, selectedAsset]);
-
-  useEffect(() => {
-    document.body.dataset.galleryAtBottom = "false";
-
-    return () => {
-      delete document.body.dataset.galleryAtBottom;
-    };
-  }, []);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col px-4 pt-5">
@@ -710,11 +830,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       </header>
 
       {hasMounted ? (
-        <VirtualizedMasonryGrid
-          assets={assets}
-          onOpen={setSelectedAsset}
-          onScrollStateChange={syncFooterVisibility}
-        />
+        <VirtualizedMasonryGrid assets={assets} onOpen={setSelectedAsset} />
       ) : (
         <div className="min-h-[60vh]" />
       )}
