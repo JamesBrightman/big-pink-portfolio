@@ -1,7 +1,13 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { AssetFile } from "@/lib/assets";
 import { HomeIcon } from "@/components/icons/HomeIcon";
 import {
@@ -48,6 +54,42 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       behavior: "smooth",
     });
   };
+  const closeSelectedAsset = useCallback(() => {
+    if (!selectedAsset) {
+      return;
+    }
+
+    if (window.history.state?.assetLightbox === true) {
+      window.history.back();
+
+      return;
+    }
+
+    setSelectedAsset(null);
+  }, [selectedAsset]);
+
+  useEffect(() => {
+    if (!selectedAsset) {
+      return undefined;
+    }
+
+    if (window.history.state?.assetLightbox !== true) {
+      window.history.pushState(
+        { ...window.history.state, assetLightbox: true },
+        "",
+      );
+    }
+
+    const onPopState = () => {
+      setSelectedAsset(null);
+    };
+
+    window.addEventListener("popstate", onPopState);
+
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [selectedAsset]);
 
   useEffect(() => {
     if (!selectedAsset && !isMobileNavOpen) {
@@ -56,7 +98,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setSelectedAsset(null);
+        closeSelectedAsset();
         setIsMobileNavOpen(false);
       }
     };
@@ -68,7 +110,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
     };
-  }, [isMobileNavOpen, selectedAsset]);
+  }, [closeSelectedAsset, isMobileNavOpen, selectedAsset]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col px-4 pt-5">
@@ -125,7 +167,7 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       {selectedAsset ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-2 py-0 sm:p-4"
-          onClick={() => setSelectedAsset(null)}
+          onClick={closeSelectedAsset}
         >
           <div
             className="flex max-h-dvh w-full max-w-full flex-col items-center overflow-y-auto sm:max-h-[calc(100dvh-2rem)] sm:w-auto sm:max-w-[calc(100vw-2rem)] sm:pr-3"
