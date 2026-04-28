@@ -1,4 +1,6 @@
+import { cache } from "react";
 import fs from "node:fs/promises";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { z } from "zod";
 
@@ -41,6 +43,11 @@ export type AssetFolder = {
 const ASSET_ROOT = path.join(process.cwd(), "public", "assets");
 const THUMBNAIL_ROOT = path.join(process.cwd(), "public", "assets-thumbs");
 const PUBLIC_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const ffprobePackageRoot = path.join(
+  process.cwd(),
+  "node_modules",
+  "ffprobe-static",
+);
 const MEDIA_EXTENSIONS = new Set([
   ".avif",
   ".gif",
@@ -76,7 +83,11 @@ function getAssetPublicSrc(relativeSegments: string[], fileName: string) {
 
 function getThumbnailPublicSrc(relativeSegments: string[], fileName: string) {
   return `${PUBLIC_BASE_PATH}/${toPublicSrc(
-    path.join("assets-thumbs", ...relativeSegments, `${fileBaseName(fileName)}.webp`),
+    path.join(
+      "assets-thumbs",
+      ...relativeSegments,
+      `${fileBaseName(fileName)}.webp`,
+    ),
   )}`;
 }
 
@@ -141,7 +152,11 @@ async function readFileHeader(filePath: string, length: number) {
 }
 
 function parseWebpDimensions(buffer: Buffer): AssetDimensions | null {
-  if (buffer.length < 30 || buffer.toString("ascii", 0, 4) !== "RIFF" || buffer.toString("ascii", 8, 12) !== "WEBP") {
+  if (
+    buffer.length < 30 ||
+    buffer.toString("ascii", 0, 4) !== "RIFF" ||
+    buffer.toString("ascii", 8, 12) !== "WEBP"
+  ) {
     return null;
   }
 
@@ -173,17 +188,194 @@ function parseWebpDimensions(buffer: Buffer): AssetDimensions | null {
   return null;
 }
 
-async function readImageDimensions(filePath: string): Promise<AssetDimensions | null> {
-  if (path.extname(filePath).toLowerCase() !== ".webp") {
+function parseGifDimensions(buffer: Buffer): AssetDimensions | null {
+  if (
+    buffer.length < 10 ||
+    (buffer.toString("ascii", 0, 6) !== "GIF87a" &&
+      buffer.toString("ascii", 0, 6) !== "GIF89a")
+  ) {
     return null;
   }
 
-  const buffer = await readFileHeader(filePath, 64);
-
-  return parseWebpDimensions(buffer);
+  return {
+    width: buffer.readUInt16LE(6),
+    height: buffer.readUInt16LE(8),
+  };
 }
 
-async function readFolder(folderPath: string, relativeSegments: string[]): Promise<AssetFolder> {
+function parsePngDimensions(buffer: Buffer): AssetDimensions | null {
+  if (
+    buffer.length < 24 ||
+    buffer.readUInt32BE(0) !== 0x89504e47 ||
+    buffer.toString("ascii", 12, 16) !== "IHDR"
+  ) {
+    return null;
+  }
+
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
+function parseJpegDimensions(buffer: Buffer): AssetDimensions | null {
+  if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
+    return null;
+  }
+
+  let offset = 2;
+
+  while (offset + 9 < buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+
+    const marker = buffer[offset + 1];
+
+    if (marker === 0xd8 || marker === 0xd9) {
+      offset += 2;
+      continue;
+    }
+
+    const segmentLength = buffer.readUInt16BE(offset + 2);
+
+    if (segmentLength < 2 || offset + 2 + segmentLength > buffer.length) {
+      return null;
+    }
+
+    const isStartOfFrame =
+      marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker);
+
+    if (isStartOfFrame) {
+      return {
+        width: buffer.readUInt16BE(offset + 7),
+        height: buffer.readUInt16BE(offset + 5),
+      };
+    }
+
+    offset += 2 + segmentLength;
+  }
+
+  return null;
+}
+
+async function readImageDimensions(
+  filePath: string,
+): Promise<AssetDimensions | null> {
+  const extension = path.extname(filePath).toLowerCase();
+
+  if (extension === ".webp") {
+    const buffer = await readFileHeader(filePath, 64);
+
+    return parseWebpDimensions(buffer);
+  }
+
+  if (extension === ".gif") {
+    const buffer = await readFileHeader(filePath, 32);
+
+    return parseGifDimensions(buffer);
+  }
+
+  if (extension === ".png") {
+    const buffer = await readFileHeader(filePath, 32);
+
+    return parsePngDimensions(buffer);
+  }
+
+  if (extension === ".jpg" || extension === ".jpeg") {
+    const buffer = await readFileHeader(filePath, 4096);
+
+    return parseJpegDimensions(buffer);
+  }
+
+  return null;
+}
+
+async function readVideoDimensions(
+  filePath: string,
+): Promise<AssetDimensions | null> {
+  const ffprobePath = path.join(
+    ffprobePackageRoot,
+    "bin",
+    process.platform,
+    process.arch,
+    process.platform === "win32" ? "ffprobe.exe" : "ffprobe",
+  );
+
+  if (!(await hasFile(ffprobePath))) {
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      ffprobePath,
+      [
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=width,height",
+        "-of",
+        "json",
+        filePath,
+      ],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+      },
+    );
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`ffprobe exited with code ${code}: ${stderr}`));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(stdout) as {
+          streams?: Array<{ width?: number; height?: number }>;
+        };
+        const stream = parsed.streams?.[0];
+
+        if (
+          typeof stream?.width === "number" &&
+          typeof stream?.height === "number" &&
+          stream.width > 0 &&
+          stream.height > 0
+        ) {
+          resolve({
+            width: stream.width,
+            height: stream.height,
+          });
+          return;
+        }
+
+        resolve(null);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+async function readFolder(
+  folderPath: string,
+  relativeSegments: string[],
+): Promise<AssetFolder> {
   const entries = await fs.readdir(folderPath, { withFileTypes: true });
   const folders: AssetFolder[] = [];
   const files: AssetFile[] = [];
@@ -193,7 +385,9 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
     const nextPath = path.join(folderPath, entry.name);
 
     if (entry.isDirectory()) {
-      folders.push(await readFolder(nextPath, [...relativeSegments, entry.name]));
+      folders.push(
+        await readFolder(nextPath, [...relativeSegments, entry.name]),
+      );
       continue;
     }
 
@@ -201,6 +395,14 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
     const kind = getKind(extension);
 
     if (!kind) {
+      continue;
+    }
+
+    if (
+      kind === "image" &&
+      extension !== ".webp" &&
+      (await hasFile(path.join(folderPath, `${fileBaseName(entry.name)}.webp`)))
+    ) {
       continue;
     }
 
@@ -212,23 +414,32 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
       );
     }
 
+    const thumbnailFilePath = path.join(
+      THUMBNAIL_ROOT,
+      ...relativeSegments,
+      `${fileBaseName(entry.name)}.webp`,
+    );
+    const hasThumbnail = await hasFile(thumbnailFilePath);
+    const displayedDimensions =
+      kind === "video"
+        ? await readVideoDimensions(nextPath)
+        : hasThumbnail || kind === "image"
+          ? await readImageDimensions(
+              hasThumbnail ? thumbnailFilePath : nextPath,
+            )
+          : null;
+
     files.push({
       name: entry.name,
       src: getAssetPublicSrc(relativeSegments, entry.name),
-      thumbnailSrc:
-        kind === "image" &&
-        (await hasFile(
-          path.join(
-            THUMBNAIL_ROOT,
-            ...relativeSegments,
-            `${fileBaseName(entry.name)}.webp`,
-          ),
-        ))
-          ? getThumbnailPublicSrc(relativeSegments, entry.name)
-          : getAssetPublicSrc(relativeSegments, entry.name),
+      thumbnailSrc: hasThumbnail
+        ? getThumbnailPublicSrc(relativeSegments, entry.name)
+        : kind === "image"
+          ? getAssetPublicSrc(relativeSegments, entry.name)
+          : undefined,
       kind,
       ...metadata,
-      ...(kind === "image" ? await readImageDimensions(nextPath) : null),
+      ...(displayedDimensions ?? null),
     });
   }
 
@@ -243,9 +454,11 @@ async function readFolder(folderPath: string, relativeSegments: string[]): Promi
   };
 }
 
-export async function getAssetTree() {
+async function getAssetTreeUncached() {
   return readFolder(ASSET_ROOT, []);
 }
+
+export const getAssetTree = cache(getAssetTreeUncached);
 
 export function findFolderByPath(root: AssetFolder, pathSegments: string[]) {
   let current: AssetFolder = root;
@@ -277,9 +490,14 @@ export function getAssetsForPath(root: AssetFolder, pathSegments: string[]) {
   return collectFilesFromFolder(folder);
 }
 
-export function collectFolderPaths(root: AssetFolder, prefix: string[] = []): string[][] {
+export function collectFolderPaths(
+  root: AssetFolder,
+  prefix: string[] = [],
+): string[][] {
   return [
     prefix,
-    ...root.folders.flatMap((folder) => collectFolderPaths(folder, [...prefix, folder.name])),
+    ...root.folders.flatMap((folder) =>
+      collectFolderPaths(folder, [...prefix, folder.name]),
+    ),
   ];
 }

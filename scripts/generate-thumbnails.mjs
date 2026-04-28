@@ -31,7 +31,12 @@ async function shouldGenerateThumbnail(sourcePath, outputPath) {
     ]);
     return outputStats.mtimeMs < sourceStats.mtimeMs;
   } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
       return true;
     }
 
@@ -74,7 +79,10 @@ async function walkDirectory(currentDirectory) {
       continue;
     }
 
-    const outputDirectory = path.join(thumbnailRoot, path.dirname(relativePath));
+    const outputDirectory = path.join(
+      thumbnailRoot,
+      path.dirname(relativePath),
+    );
     const outputPath = path.join(
       outputDirectory,
       `${fileBaseName(path.basename(relativePath))}.webp`,
@@ -86,7 +94,9 @@ async function walkDirectory(currentDirectory) {
 
     await ensureDirectory(outputDirectory);
     await generateThumbnail(sourcePath, outputPath);
-    console.log(`[thumb] ${relativePath} -> ${path.relative(process.cwd(), outputPath)}`);
+    console.log(
+      `[thumb] ${relativePath} -> ${path.relative(process.cwd(), outputPath)}`,
+    );
   }
 }
 

@@ -7,6 +7,9 @@
     "dev:next": "next dev",
     "build": "next build",
     "build:pages": "node scripts/build-pages.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "optimize:new-images": "node scripts/optimize-new-images.mjs",
     "thumbnails": "node scripts/generate-thumbnails.mjs",
     "start": "node scripts/run-local.mjs start",
     "start:next": "next start",
@@ -18,6 +21,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-responsive-masonry": "^2.7.2",
+    "react-virtualized": "^9.22.6",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
@@ -25,9 +29,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-virtualized": "^9.22.3",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "ffprobe-static": "^3.1.0",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

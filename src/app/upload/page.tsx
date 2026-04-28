@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { UploadForm } from "@/components/upload-form";
+import { UploadForm } from "@/components/UploadForm";
 import { collectFolderPaths, getAssetTree } from "@/lib/assets";
 
 export default async function UploadPage() {
-  const enableLocalUpload = process.env.NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD === "true";
+  const enableLocalUpload =
+    process.env.NEXT_PUBLIC_ENABLE_LOCAL_UPLOAD === "true";
   const tree = await getAssetTree();
   const folderOptions = collectFolderPaths(tree)
     .filter((segments) => segments.length > 0)
@@ -18,7 +19,9 @@ export default async function UploadPage() {
               {enableLocalUpload ? "Local upload" : "Static hosting"}
             </p>
             <h1 className="mt-2 text-3xl font-medium">
-              {enableLocalUpload ? "Add a new asset locally" : "Asset changes are build-time only"}
+              {enableLocalUpload
+                ? "Add a new asset locally"
+                : "Asset changes are build-time only"}
             </h1>
           </div>
 
@@ -34,21 +37,23 @@ export default async function UploadPage() {
           <>
             <div className="space-y-4 text-sm leading-6 text-[#5b6270]">
               <p>
-                This local-only uploader writes directly into the repo using your browser&apos;s file system
-                access. It will:
+                This local-only uploader writes directly into the repo using
+                your browser&apos;s file system access. It will:
               </p>
 
               <p>
-                copy the original file into <span className="font-medium">originals</span>, convert images
-                to <span className="font-medium">.webp</span> including animated GIF uploads, place the
-                result in the selected folder under{" "}
-                <span className="font-medium">public/assets</span>, and update that folder&apos;s{" "}
+                copy the original file into{" "}
+                <span className="font-medium">originals</span>, convert images
+                to <span className="font-medium">.webp</span> including animated
+                GIF uploads, place the result in the selected folder under{" "}
+                <span className="font-medium">public/assets</span>, and update
+                that folder&apos;s{" "}
                 <span className="font-medium">data.json</span>.
               </p>
 
               <p>
-                This is disabled in the GitHub Pages build and is intended for local Chrome/Edge-style
-                browsers only.
+                This is disabled in the GitHub Pages build and is intended for
+                local Chrome/Edge-style browsers only.
               </p>
             </div>
 
@@ -57,18 +62,20 @@ export default async function UploadPage() {
         ) : (
           <div className="space-y-4 text-sm leading-6 text-[#5b6270]">
             <p>
-              This site now builds as a static export for GitHub Pages. That means the local upload tool
-              is disabled in production builds.
+              This site now builds as a static export for GitHub Pages. That
+              means the local upload tool is disabled in production builds.
             </p>
 
             <p>
-              To add or update media, edit the files under <span className="font-medium">public/assets</span>,
-              update the matching <span className="font-medium">data.json</span>, then rebuild the site.
+              To add or update media, edit the files under{" "}
+              <span className="font-medium">public/assets</span>, update the
+              matching <span className="font-medium">data.json</span>, then
+              rebuild the site.
             </p>
 
             <p>
-              Use <span className="font-medium">npm run build:pages</span> to produce the exact static output
-              that GitHub Pages serves.
+              Use <span className="font-medium">npm run build:pages</span> to
+              produce the exact static output that GitHub Pages serves.
             </p>
           </div>
         )}

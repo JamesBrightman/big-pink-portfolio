@@ -80,8 +80,7 @@ const server = http.createServer(async (request, response) => {
     const transformer = sharp(inputBuffer, {
       animated: file.type === "image/gif" || extension === ".gif",
       limitInputPixels: false,
-    })
-      .rotate();
+    }).rotate();
 
     if (maxWidth) {
       transformer.resize({
@@ -104,7 +103,8 @@ const server = http.createServer(async (request, response) => {
     });
     response.end(outputBuffer);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Conversion failed.";
+    const message =
+      error instanceof Error ? error.message : "Conversion failed.";
     writeJson(response, 500, { error: message });
   }
 });
