@@ -97,7 +97,7 @@ This workflow:
 - creates a full-size `.webp` asset in the same folder
 - creates a thumbnail `.webp` in `public/assets-thumbs`
 - updates the matching filename in `data.json`
-- leaves the original source file in place
+- moves the original source file into `public/assets-originals` with the same relative folder structure
 
 ### Regenerate Thumbnails
 
