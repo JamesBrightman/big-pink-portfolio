@@ -19,6 +19,10 @@ const assetRoot = path.resolve(
   cwd,
   getOptionValue("--asset-root", path.join("public", "assets")),
 );
+const originalRoot = path.resolve(
+  cwd,
+  getOptionValue("--original-root", "originals"),
+);
 const thumbnailRoot = path.resolve(
   cwd,
   getOptionValue("--thumbnail-root", path.join("public", "assets-thumbs")),
@@ -106,6 +110,31 @@ async function generateWebp(sourcePath, outputPath, width) {
     .toFile(outputPath);
 }
 
+async function moveToOriginals(sourcePath, outputPath) {
+  if (dryRun) {
+    return;
+  }
+
+  await fs.rm(outputPath, { force: true });
+
+  try {
+    await fs.rename(sourcePath, outputPath);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "EXDEV"
+    ) {
+      await fs.copyFile(sourcePath, outputPath);
+      await fs.unlink(sourcePath);
+      return;
+    }
+
+    throw error;
+  }
+}
+
 async function optimizeFolder(folderPath, relativeSegments, summary) {
   const entries = await fs.readdir(folderPath, { withFileTypes: true });
   const { metadataPath, items } = await readFolderMetadata(folderPath);
@@ -132,10 +161,10 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
     const sourceBaseName = fileBaseName(entry.name);
     const optimizedFileName = `${sourceBaseName}.webp`;
     const optimizedAssetPath = path.join(folderPath, optimizedFileName);
-
-    if (await hasFile(optimizedAssetPath)) {
-      continue;
-    }
+    const thumbnailDirectory = path.join(thumbnailRoot, ...relativeSegments);
+    const thumbnailPath = path.join(thumbnailDirectory, optimizedFileName);
+    const originalDirectory = path.join(originalRoot, ...relativeSegments);
+    const originalAssetPath = path.join(originalDirectory, entry.name);
 
     if (!items) {
       throw new Error(
@@ -144,7 +173,8 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
     }
 
     const metadataIndex = items.findIndex(
-      (item) => item.fileName === entry.name,
+      (item) =>
+        item.fileName === entry.name || item.fileName === optimizedFileName,
     );
 
     if (metadataIndex === -1) {
@@ -153,28 +183,59 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
       );
     }
 
-    const thumbnailDirectory = path.join(thumbnailRoot, ...relativeSegments);
-    const thumbnailPath = path.join(thumbnailDirectory, optimizedFileName);
+    const hasOptimizedAsset = await hasFile(optimizedAssetPath);
+    const hasThumbnailAsset = await hasFile(thumbnailPath);
+    const needsMetadataUpdate =
+      items[metadataIndex].fileName !== optimizedFileName;
+    const needsArchive = true;
 
-    await ensureDirectory(thumbnailDirectory);
-
-    if (!dryRun) {
-      await generateWebp(sourcePath, optimizedAssetPath);
-      await generateWebp(sourcePath, thumbnailPath, thumbnailWidth);
+    if (
+      !hasOptimizedAsset &&
+      !hasThumbnailAsset &&
+      !needsMetadataUpdate &&
+      !needsArchive
+    ) {
+      continue;
     }
 
-    items[metadataIndex] = {
-      ...items[metadataIndex],
-      fileName: optimizedFileName,
-    };
-    metadataChanged = true;
-    summary.converted += 1;
-    summary.updatedMetadata += 1;
-    summary.generatedThumbnails += 1;
+    await ensureDirectory(thumbnailDirectory);
+    await ensureDirectory(originalDirectory);
+
+    if (!dryRun) {
+      if (!hasOptimizedAsset) {
+        await generateWebp(sourcePath, optimizedAssetPath);
+      }
+
+      if (!hasThumbnailAsset) {
+        await generateWebp(sourcePath, thumbnailPath, thumbnailWidth);
+      }
+    }
+
+    if (needsMetadataUpdate) {
+      items[metadataIndex] = {
+        ...items[metadataIndex],
+        fileName: optimizedFileName,
+      };
+      metadataChanged = true;
+      summary.updatedMetadata += 1;
+    }
+
+    await moveToOriginals(sourcePath, originalAssetPath);
+
+    if (!hasOptimizedAsset) {
+      summary.converted += 1;
+    }
+
+    if (!hasThumbnailAsset) {
+      summary.generatedThumbnails += 1;
+    }
+
+    summary.archivedOriginals += 1;
     summary.actions.push({
       source: path.join(...relativeSegments, entry.name),
       optimized: path.join(...relativeSegments, optimizedFileName),
       thumbnail: path.join(...relativeSegments, optimizedFileName),
+      archivedOriginal: path.join(...relativeSegments, entry.name),
     });
   }
 
@@ -186,15 +247,18 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
 async function main() {
   const summary = {
     assetRoot,
+    originalRoot,
     thumbnailRoot,
     dryRun,
     converted: 0,
     generatedThumbnails: 0,
     updatedMetadata: 0,
+    archivedOriginals: 0,
     actions: [],
   };
 
   await ensureDirectory(thumbnailRoot);
+  await ensureDirectory(originalRoot);
   await optimizeFolder(assetRoot, [], summary);
 
   if (summary.actions.length > 0) {

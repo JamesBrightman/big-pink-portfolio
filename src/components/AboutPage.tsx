@@ -9,33 +9,32 @@ const categoryCards = [
   {
     title: "Traditional art",
     href: "/traditional",
-    imageSrc: "/assets-thumbs/traditional/21stapril2024.webp",
+    imageSrc: "/about-assets/traditional-art-thumbnail.webp",
   },
   {
     title: "Digital art",
     href: "/digital/creative",
-    imageSrc: "/assets-thumbs/digital/creative/Animated-Makeup.webp",
+    imageSrc: "/about-assets/digital-art-thumbnail.webp",
   },
   {
     title: "Physical creations",
     href: "/physical",
-    imageSrc: "/assets-thumbs/physical/13thapril2025.webp",
+    imageSrc: "/about-assets/physical-creations-thumbnail.webp",
   },
   {
     title: "Design",
     href: "/digital/design",
-    imageSrc:
-      "/assets-thumbs/digital/design/big-pink-pages-magazine-issue-3.webp",
+    imageSrc: "/about-assets/design-thumbnail.webp",
   },
   {
-    title: "Photography",
+    title: "photo",
     href: "/digital/photo",
-    imageSrc: "/assets-thumbs/digital/photo/other/10thmayy2024.webp",
+    imageSrc: "/about-assets/photography-thumbnail.webp",
   },
   {
     title: "Video",
     href: "/digital/video",
-    imageSrc: "/assets-thumbs/digital/creative/12dec21.webp",
+    imageSrc: "/about-assets/video-thumbnail.webp",
   },
 ];
 
@@ -50,57 +49,43 @@ export function AboutPage({ tree }: AboutPageProps) {
 
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 pt-4 lg:gap-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <div className="overflow-hidden rounded-[1.7rem] border border-white/14 bg-white/8">
+          <div className="mx-auto w-full max-w-[34rem] overflow-hidden lg:mx-0">
             <img
-              src="/assets-thumbs/physical/13thapril2025.webp"
-              alt="Big Pink Energy artwork preview"
-              className="h-full min-h-[22rem] w-full object-cover"
+              src="/about-assets/bpe-about.webp"
+              alt="Big Pink Energy portrait"
+              className="h-full min-h-[18rem] w-full object-cover"
             />
           </div>
 
-          <div className="flex flex-col justify-center gap-5">
-            <h1 className="max-w-[11ch] text-5xl font-semibold uppercase leading-[0.92] sm:text-6xl">
+          <div className="flex flex-col items-center justify-center gap-5 text-center lg:items-start lg:text-left">
+            <h1 className="whitespace-nowrap text-4xl font-semibold uppercase leading-[0.92] sm:text-5xl xl:text-6xl">
               Big pink energy
             </h1>
             <p className="max-w-2xl text-base leading-7 text-white/86 sm:text-lg">
-              Big Pink Energy is a playful visual portfolio spanning traditional
-              work, digital art, handmade physical pieces, editorial design,
-              photography, and moving image. The work leans bold, tactile, and
-              highly personal while staying open to commissions, collaborations,
-              and creative direction projects.
+              Hi! I&apos;m Brooke, known online as big pink energy. I&apos;m a
+              DIY creative - it all started when I taught myself how to make my
+              own clothes and use photoshop as a teenager, and I&apos;ve been
+              learning and absorbing inspiration ever since.
             </p>
             <p className="max-w-2xl text-base leading-7 text-white/72 sm:text-lg">
-              If you want to talk about a custom piece, a shoot, a campaign, or
-              a one-off concept, use the contact form below.
+              Whether it&apos;s physical pieces, animated designs or traditional
+              artwork, I just love to create. This portfolio spans the majority
+              of my work, both personal and professional. I&apos;m always open
+              to collaborate and work on something fun, so if you&apos;d like to
+              make your next project a little more pink, feel free to get in
+              touch.
             </p>
           </div>
         </div>
 
         <section className="rounded-[2rem] border border-white/14 bg-white/8 p-5 shadow-[0_20px_60px_rgba(91,0,56,0.18)] backdrop-blur-sm lg:p-7">
-          <p className="text-sm uppercase tracking-[0.22em] text-white/72">
-            Contact form
-          </p>
-          <h2 className="mt-3 text-3xl font-semibold uppercase">
-            Start a conversation
-          </h2>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-white/78">
-            Share the kind of work you need, any timing, and the overall feel
-            you want. The form opens your email app addressed to Big Pink
-            Energy with your details filled in.
-          </p>
+          <h2 className="text-3xl font-semibold uppercase">Let&apos;s chat</h2>
           <div className="mt-6">
             <AboutContactForm />
           </div>
         </section>
 
         <section>
-          <p className="text-sm uppercase tracking-[0.22em] text-white/72">
-            Explore
-          </p>
-          <h2 className="mt-3 text-3xl font-semibold uppercase">
-            Browse by medium
-          </h2>
-
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {categoryCards.map((card) => (
               <Link

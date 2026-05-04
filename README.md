@@ -32,7 +32,7 @@ The app is built as a static export, so content is managed in the repository rat
 - [src/lib/assets.ts](/E:/Documents/2.Projects/big-pink-portfolio/src/lib/assets.ts) reads asset folders, metadata, thumbnails, and media dimensions
 - [public/assets](/E:/Documents/2.Projects/big-pink-portfolio/public/assets) contains full-size site assets used by the gallery
 - [public/assets-thumbs](/E:/Documents/2.Projects/big-pink-portfolio/public/assets-thumbs) contains grid thumbnails
-- [public/assets-originals](/E:/Documents/2.Projects/big-pink-portfolio/public/assets-originals) stores source/original media snapshots
+- [originals](/E:/Documents/2.Projects/big-pink-portfolio/originals) stores source/original media snapshots
 - [scripts](/E:/Documents/2.Projects/big-pink-portfolio/scripts) contains local workflow scripts
 
 ## Commands
@@ -97,7 +97,7 @@ This workflow:
 - creates a full-size `.webp` asset in the same folder
 - creates a thumbnail `.webp` in `public/assets-thumbs`
 - updates the matching filename in `data.json`
-- leaves the original source file in place
+- moves the original source file into `originals/`
 
 ### Regenerate Thumbnails
 
