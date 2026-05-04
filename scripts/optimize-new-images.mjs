@@ -21,7 +21,7 @@ const assetRoot = path.resolve(
 );
 const originalRoot = path.resolve(
   cwd,
-  getOptionValue("--original-root", path.join("public", "assets-originals")),
+  getOptionValue("--original-root", "originals"),
 );
 const thumbnailRoot = path.resolve(
   cwd,
