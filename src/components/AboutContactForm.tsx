@@ -33,78 +33,63 @@ export function AboutContactForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-2 block text-sm uppercase tracking-[0.14em] text-white/78">
-            Name
-          </span>
+          <span className="sr-only">Name</span>
           <input
             type="text"
             name="name"
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="w-full rounded-[1.2rem] border border-white/18 bg-white/12 px-4 py-3 text-white outline-none transition placeholder:text-white/45 focus:border-white/50 focus:bg-white/18"
-            placeholder="Your name"
+            placeholder="NAME"
           />
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm uppercase tracking-[0.14em] text-white/78">
-            Email
-          </span>
+          <span className="sr-only">Email</span>
           <input
             type="email"
             name="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="w-full rounded-[1.2rem] border border-white/18 bg-white/12 px-4 py-3 text-white outline-none transition placeholder:text-white/45 focus:border-white/50 focus:bg-white/18"
-            placeholder="you@example.com"
+            placeholder="EMAIL"
             required
           />
         </label>
       </div>
 
       <label className="block">
-        <span className="mb-2 block text-sm uppercase tracking-[0.14em] text-white/78">
-          Project type
-        </span>
+        <span className="sr-only">Project type</span>
         <input
           type="text"
           name="projectType"
           value={projectType}
           onChange={(event) => setProjectType(event.target.value)}
           className="w-full rounded-[1.2rem] border border-white/18 bg-white/12 px-4 py-3 text-white outline-none transition placeholder:text-white/45 focus:border-white/50 focus:bg-white/18"
-          placeholder="Commission, collab, design, photo shoot..."
+          placeholder="PROJECT TYPE"
         />
       </label>
 
       <label className="block">
-        <span className="mb-2 block text-sm uppercase tracking-[0.14em] text-white/78">
-          Message
-        </span>
+        <span className="sr-only">Message</span>
         <textarea
           name="message"
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           rows={6}
           className="w-full rounded-[1.2rem] border border-white/18 bg-white/12 px-4 py-3 text-white outline-none transition placeholder:text-white/45 focus:border-white/50 focus:bg-white/18"
-          placeholder="Tell me about the idea, timeline, or mood you're aiming for."
+          placeholder="MESSAGE"
           required
         />
       </label>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div>
         <button
           type="submit"
-          className="rounded-full border border-[#8b0f57] bg-[#8b0f57] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[#6f0c45] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+          className="rounded-full border border-[#8b0f57] bg-[#8b0f57] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6f0c45] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         >
-          Send enquiry
+          Submit
         </button>
-
-        <a
-          href={`mailto:${CONTACT_EMAIL}`}
-          className="text-sm uppercase tracking-[0.14em] text-white/84 transition hover:text-white"
-        >
-          {CONTACT_EMAIL}
-        </a>
       </div>
     </form>
   );

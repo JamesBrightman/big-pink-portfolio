@@ -189,7 +189,12 @@ async function optimizeFolder(folderPath, relativeSegments, summary) {
       items[metadataIndex].fileName !== optimizedFileName;
     const needsArchive = true;
 
-    if (!hasOptimizedAsset && !hasThumbnailAsset && !needsMetadataUpdate && !needsArchive) {
+    if (
+      !hasOptimizedAsset &&
+      !hasThumbnailAsset &&
+      !needsMetadataUpdate &&
+      !needsArchive
+    ) {
       continue;
     }
 
