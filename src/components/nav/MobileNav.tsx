@@ -12,10 +12,14 @@ import type { MobileNavProps } from "@/components/nav/types";
 export function MobileNav({
   tree,
   activePath,
+  activePage,
   isOpen,
   onOpen,
   onClose,
 }: MobileNavProps) {
+  const homeIsActive = activePage === "home";
+  const aboutIsActive = activePage === "about";
+
   return (
     <>
       <button
@@ -41,7 +45,7 @@ export function MobileNav({
               href="/"
               onClick={onClose}
               className={`mb-4 block border-b border-white/20 pb-4 text-2xl font-medium uppercase tracking-[0.01em] ${
-                activePath.length === 0 ? "italic text-white" : "text-white/90"
+                homeIsActive ? "italic text-white" : "text-white/90"
               }`}
             >
               home
@@ -81,6 +85,16 @@ export function MobileNav({
                 </div>
               ))}
             </div>
+
+            <Link
+              href="/about"
+              onClick={onClose}
+              className={`mt-4 block border-t border-white/20 pt-4 text-2xl font-medium uppercase tracking-[0.01em] ${
+                aboutIsActive ? "italic text-white" : "text-white/90"
+              }`}
+            >
+              about
+            </Link>
           </div>
         </div>
       ) : null}

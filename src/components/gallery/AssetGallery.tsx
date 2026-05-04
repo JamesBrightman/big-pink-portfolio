@@ -1,6 +1,5 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -9,7 +8,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import type { AssetFile } from "@/lib/assets";
-import { HomeIcon } from "@/components/icons/HomeIcon";
 import {
   attemptVideoAutoplay,
   collectFiles,
@@ -18,8 +16,7 @@ import {
 } from "@/components/gallery/galleryUtils";
 import type { AssetGalleryProps } from "@/components/gallery/types";
 import { VirtualizedMasonryGrid } from "@/components/gallery/VirtualizedMasonryGrid";
-import { MobileNav } from "@/components/nav/MobileNav";
-import { NavFolderItem } from "@/components/nav/NavFolderItem";
+import { SiteNav } from "@/components/nav/SiteNav";
 
 export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   const hasMounted = useSyncExternalStore(
@@ -27,7 +24,6 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
     () => true,
     () => false,
   );
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetFile | null>(null);
   const activePath = initialPath;
   let activeFolder = tree;
@@ -92,14 +88,13 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
   }, [selectedAsset]);
 
   useEffect(() => {
-    if (!selectedAsset && !isMobileNavOpen) {
+    if (!selectedAsset) {
       return undefined;
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeSelectedAsset();
-        setIsMobileNavOpen(false);
       }
     };
 
@@ -110,53 +105,16 @@ export function AssetGallery({ tree, initialPath }: AssetGalleryProps) {
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
     };
-  }, [closeSelectedAsset, isMobileNavOpen, selectedAsset]);
+  }, [closeSelectedAsset, selectedAsset]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col px-4 pt-5">
-      <header className="relative z-50 mb-1 bg-transparent">
-        <div className="overflow-hidden lg:overflow-visible">
-          <nav className="flex items-center justify-between bg-transparent px-0 pb-2">
-            {activePath.length === 0 ? (
-              <button
-                type="button"
-                aria-label="Scroll to top"
-                onClick={scrollGalleryToTop}
-                className="relative flex items-center justify-center pb-3 text-white italic transition hover:text-white"
-              >
-                <HomeIcon />
-              </button>
-            ) : (
-              <Link
-                href="/"
-                aria-label="Home"
-                className="relative flex items-center justify-center pb-3 text-white/85 transition hover:text-white"
-              >
-                <HomeIcon />
-              </Link>
-            )}
-
-            <div className="hidden flex-wrap items-center justify-end gap-8 lg:flex">
-              {tree.folders.map((folder) => (
-                <NavFolderItem
-                  key={folder.name}
-                  folder={folder}
-                  pathSegments={[folder.name]}
-                  activePath={activePath}
-                />
-              ))}
-            </div>
-
-            <MobileNav
-              tree={tree}
-              activePath={activePath}
-              isOpen={isMobileNavOpen}
-              onOpen={() => setIsMobileNavOpen(true)}
-              onClose={() => setIsMobileNavOpen(false)}
-            />
-          </nav>
-        </div>
-      </header>
+      <SiteNav
+        tree={tree}
+        activePath={activePath}
+        activePage={activePath.length === 0 ? "home" : undefined}
+        onHomeClick={activePath.length === 0 ? scrollGalleryToTop : undefined}
+      />
 
       {hasMounted ? (
         <VirtualizedMasonryGrid assets={assets} onOpen={setSelectedAsset} />

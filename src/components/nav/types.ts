@@ -11,6 +11,7 @@ export interface FolderDropdownListProps {
 export interface MobileNavProps {
   tree: AssetFolder;
   activePath: string[];
+  activePage?: "about" | "home";
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
