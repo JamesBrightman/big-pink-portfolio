@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const WEB3FORMS_ACCESS_KEY = "968cf362-ad8e-4370-b759-99bb12367992";
+const WEB3FORMS_ACCESS_KEY = "0298bff7-9490-4cde-9a42-26922dc72d82";
 const fieldClassName =
   "w-full rounded-[1.2rem] border border-white/18 bg-white/12 px-4 py-3 text-white outline-none transition placeholder:text-white/45 focus:border-white/50 focus:bg-white/18 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/6 disabled:text-white/45 disabled:placeholder:text-white/35";
 
@@ -18,6 +18,7 @@ export function AboutContactForm() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus("sending");
+    const formData = new FormData(event.currentTarget);
 
     const payload = {
       access_key: WEB3FORMS_ACCESS_KEY,
@@ -28,6 +29,7 @@ export function AboutContactForm() {
       email,
       project_type: projectType,
       message,
+      botcheck: formData.get("botcheck") ?? "",
     };
 
     try {
@@ -57,6 +59,14 @@ export function AboutContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <input
+        type="text"
+        name="botcheck"
+        tabIndex={-1}
+        autoComplete="off"
+        className="hidden"
+      />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="sr-only">Name</span>
