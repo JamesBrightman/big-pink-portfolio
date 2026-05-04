@@ -88,7 +88,7 @@ export function AboutContactForm() {
           type="submit"
           className="rounded-full border border-[#8b0f57] bg-[#8b0f57] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6f0c45] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         >
-          Submit
+          SUBMIT
         </button>
       </div>
     </form>
