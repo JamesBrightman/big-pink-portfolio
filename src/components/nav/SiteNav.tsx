@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { pushAnalyticsEvent } from "@/components/analytics/analytics";
 import type { AssetFolder } from "@/lib/assets";
 import { HomeIcon } from "@/components/icons/HomeIcon";
 import { MobileNav } from "@/components/nav/MobileNav";
@@ -24,6 +25,14 @@ export function SiteNav({
   const homeIsActive = activePage === "home";
   const aboutIsActive = activePage === "about";
   const showHomeButton = homeIsActive && typeof onHomeClick === "function";
+
+  const trackNavClick = (navLabel: string, navTarget: string) => {
+    pushAnalyticsEvent("nav_click", {
+      nav_label: navLabel,
+      nav_target: navTarget,
+      nav_location: "desktop_header",
+    });
+  };
 
   useEffect(() => {
     if (!isMobileNavOpen) {
@@ -53,7 +62,10 @@ export function SiteNav({
             <button
               type="button"
               aria-label="Scroll to top"
-              onClick={onHomeClick}
+              onClick={() => {
+                trackNavClick("home", "/");
+                onHomeClick();
+              }}
               className="relative flex items-center justify-center pb-3 text-white italic transition hover:text-white"
             >
               <HomeIcon />
@@ -62,6 +74,7 @@ export function SiteNav({
             <Link
               href="/"
               aria-label="Home"
+              onClick={() => trackNavClick("home", "/")}
               className={`relative flex items-center justify-center pb-3 transition hover:text-white ${
                 homeIsActive ? "text-white" : "text-white/85"
               }`}
@@ -82,6 +95,7 @@ export function SiteNav({
 
             <Link
               href="/about"
+              onClick={() => trackNavClick("about", "/about")}
               className={`block whitespace-nowrap pb-3 text-2xl font-medium uppercase tracking-[0.01em] transition sm:text-3xl ${
                 aboutIsActive
                   ? "italic text-white"

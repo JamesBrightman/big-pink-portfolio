@@ -67,6 +67,25 @@ The app is built as a static export, so content is managed in the repository rat
 - `npm run optimize:new-images`
   Converts remaining `.png`, `.jpg`, and `.jpeg` images in `public/assets` to `.webp`, creates matching thumbnails, and updates the relevant `data.json` entries. Video files are skipped.
 
+## Analytics
+
+The site is set up for Google Tag Manager and stays disabled unless a container ID is present.
+
+Set this in `.env.local` for local/prod builds:
+
+```bash
+NEXT_PUBLIC_GTM_ID=GTM-5BP89VFG
+```
+
+Notes:
+
+- GTM is injected from the root layout, including the `noscript` iframe fallback
+- App Router page changes push a `page_view` event into `dataLayer`
+- navigation clicks push `nav_click`
+- successful contact form sends push `email_send_success`
+- failed contact form sends push `email_send_error`
+- if `NEXT_PUBLIC_GTM_ID` is unset, no GTM script is injected
+
 ## Content Workflows
 
 ### Add a New Asset Manually

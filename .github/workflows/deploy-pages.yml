@@ -37,6 +37,8 @@ jobs:
 
       - name: Build static export
         run: npm run build:pages
+        env:
+          NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

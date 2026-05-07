@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pushAnalyticsEvent } from "@/components/analytics/analytics";
 import {
   folderPathHref,
   isPathActive,
@@ -16,12 +17,21 @@ export function FolderDropdownList({
   const isActive = isPathActive(activePath, pathSegments);
   const hasChildren = folder.folders.length > 0;
   const indentClass = depth === 0 ? "pl-0" : "pl-4";
+  const target = folderPathHref(pathSegments);
 
   return (
     <div className={indentClass}>
       <Link
-        href={folderPathHref(pathSegments)}
-        onClick={onNavigate}
+        href={target}
+        onClick={() => {
+          pushAnalyticsEvent("nav_click", {
+            nav_label: folder.name,
+            nav_target: target,
+            nav_location: "nav_dropdown",
+            nav_depth: pathSegments.length,
+          });
+          onNavigate?.();
+        }}
         className={`block whitespace-nowrap px-3 py-2 text-left text-sm font-medium uppercase tracking-[0.01em] transition ${
           isActive ? "italic text-white" : "text-white/80 hover:text-white"
         } ${depth > 0 ? "pl-6" : ""}`}
