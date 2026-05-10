@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pushAnalyticsEvent } from "@/components/analytics/analytics";
 import { CloseIcon } from "@/components/icons/CloseIcon";
 import { MenuIcon } from "@/components/icons/MenuIcon";
 import { FolderDropdownList } from "@/components/nav/FolderDropdownList";
@@ -19,6 +20,13 @@ export function MobileNav({
 }: MobileNavProps) {
   const homeIsActive = activePage === "home";
   const aboutIsActive = activePage === "about";
+  const trackNavClick = (navLabel: string, navTarget: string) => {
+    pushAnalyticsEvent("nav_click", {
+      nav_label: navLabel,
+      nav_target: navTarget,
+      nav_location: "mobile_menu",
+    });
+  };
 
   return (
     <>
@@ -43,7 +51,10 @@ export function MobileNav({
           >
             <Link
               href="/"
-              onClick={onClose}
+              onClick={() => {
+                trackNavClick("home", "/");
+                onClose();
+              }}
               className={`mb-4 block border-b border-white/20 pb-4 text-2xl font-medium uppercase tracking-[0.01em] ${
                 homeIsActive ? "italic text-white" : "text-white/90"
               }`}
@@ -59,7 +70,10 @@ export function MobileNav({
                 >
                   <Link
                     href={folderPathHref([folder.name])}
-                    onClick={onClose}
+                    onClick={() => {
+                      trackNavClick(folder.name, folderPathHref([folder.name]));
+                      onClose();
+                    }}
                     className={`block py-2 text-2xl font-medium uppercase tracking-[0.01em] ${
                       isPathActive(activePath, [folder.name])
                         ? "italic text-white"
@@ -88,7 +102,10 @@ export function MobileNav({
 
             <Link
               href="/about"
-              onClick={onClose}
+              onClick={() => {
+                trackNavClick("about", "/about");
+                onClose();
+              }}
               className={`mt-4 block border-t border-white/20 pt-4 text-2xl font-medium uppercase tracking-[0.01em] ${
                 aboutIsActive ? "italic text-white" : "text-white/90"
               }`}

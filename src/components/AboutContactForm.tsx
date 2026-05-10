@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { pushAnalyticsEvent } from "@/components/analytics/analytics";
 
 const WEB3FORMS_ACCESS_KEY = "0298bff7-9490-4cde-9a42-26922dc72d82";
 const fieldClassName =
@@ -47,12 +48,20 @@ export function AboutContactForm() {
         throw new Error("Submission failed");
       }
 
+      pushAnalyticsEvent("email_send_success", {
+        form_name: "about_contact_form",
+        project_type: projectType || "unspecified",
+      });
       setName("");
       setEmail("");
       setProjectType("");
       setMessage("");
       setStatus("sent");
     } catch {
+      pushAnalyticsEvent("email_send_error", {
+        form_name: "about_contact_form",
+        project_type: projectType || "unspecified",
+      });
       setStatus("error");
     }
   };

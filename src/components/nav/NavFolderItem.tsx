@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pushAnalyticsEvent } from "@/components/analytics/analytics";
 import { FolderDropdownList } from "@/components/nav/FolderDropdownList";
 import {
   folderPathHref,
@@ -14,11 +15,20 @@ export function NavFolderItem({
 }: NavFolderItemProps) {
   const isActive = isPathActive(activePath, pathSegments);
   const hasChildren = folder.folders.length > 0;
+  const target = folderPathHref(pathSegments);
 
   return (
     <div className="group/nav relative">
       <Link
-        href={folderPathHref(pathSegments)}
+        href={target}
+        onClick={() =>
+          pushAnalyticsEvent("nav_click", {
+            nav_label: folder.name,
+            nav_target: target,
+            nav_location: "desktop_header",
+            nav_depth: pathSegments.length,
+          })
+        }
         className={`block whitespace-nowrap pb-3 text-2xl font-medium uppercase tracking-[0.01em] transition sm:text-3xl ${
           isActive ? "italic text-white" : "text-white/85 hover:text-white"
         }`}

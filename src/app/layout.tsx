@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({
         className="flex h-dvh min-h-dvh overflow-hidden flex-col bg-[#FFA4FA] text-[#121826]"
         suppressHydrationWarning
       >
+        <GoogleTagManager />
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </body>
     </html>
