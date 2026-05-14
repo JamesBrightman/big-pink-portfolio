@@ -83,7 +83,7 @@ export function SiteNav({
             </Link>
           )}
 
-          <div className="hidden flex-wrap items-center justify-end gap-8 lg:flex">
+          <div className="hidden flex-wrap items-center justify-end gap-8 pr-4 lg:flex">
             {tree.folders.map((folder) => (
               <NavFolderItem
                 key={folder.name}
